@@ -65,3 +65,7 @@ The planner currently reads `config.json` from the repository root. It remains t
 The Workspace Overview now acts as Mission Control: a card-based operational summary for race preparation.
 
 Mission Control remains frontend-only and uses mocked data. It surfaces workspace status, next action, countdown, preparation progress, module readiness, team status and upcoming schedule without adding backend, database, authentication, AI or telemetry.
+
+## Workspace Plans
+
+The Workspace Plans module hosts the Planner Engine MVP. It is the home for stint plan, fuel plan, tyre plan and future operational plans inside each workspace.

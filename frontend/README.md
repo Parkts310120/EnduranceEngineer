@@ -27,3 +27,7 @@ npm run preview
 ## Mission Control
 
 The workspace overview renders Mission Control from mocked workspace services and reusable workspace cards. The UI consumes derived data for progress, checklist, next action, countdown and team status.
+
+## Workspace Plans
+
+`/workspaces/:workspaceId/plans` renders the Planner Engine as a workspace module. The legacy `/planner` route remains available temporarily and reuses the same Planner screen.
