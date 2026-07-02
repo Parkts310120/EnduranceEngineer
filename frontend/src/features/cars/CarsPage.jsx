@@ -1,33 +1,21 @@
+import { cars } from '../../domain/mockData'
+import PageHeader from '../../shared/layout/PageHeader'
+import CarCard from './components/CarCard'
+
 export default function CarsPage() {
   return (
-    <main className="content">
-      <header className="topbar">
-        <div>
-          <h1>Cars</h1>
-          <p>Manage cars, simulators and endurance-specific setup information.</p>
-        </div>
+    <main className="content-page">
+      <PageHeader
+        eyebrow="Assets"
+        title="Cars"
+        description="Manage team cars used by workspaces, test days and race operations."
+        action="Add car"
+      />
 
-        <button className="primary">Add car</button>
-      </header>
-
-      <section className="grid">
-        <div className="card highlight">
-          <span className="label">iRacing</span>
-          <h2>Ford Mustang GT3</h2>
-          <p>Fuel tank: 120L • Class: GT3</p>
-        </div>
-
-        <div className="card">
-          <span className="label">Future</span>
-          <h2>BMW M4 GT3</h2>
-          <p>Not configured yet</p>
-        </div>
-
-        <div className="card">
-          <span className="label">Future</span>
-          <h2>Ferrari 296 GT3</h2>
-          <p>Not configured yet</p>
-        </div>
+      <section className="responsive-grid">
+        {cars.map((car) => (
+          <CarCard key={car.id} car={car} />
+        ))}
       </section>
     </main>
   )

@@ -1,18 +1,25 @@
+import { team } from '../../domain/mockData'
+import Badge from '../../shared/ui/Badge'
+import Button from '../../shared/ui/Button'
+import Card from '../../shared/ui/Card'
+import Input from '../../shared/ui/Input'
+
 export default function TeamPage() {
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <h1>Create your first team</h1>
-        <p>Teams group drivers, cars and race events inside your organization.</p>
+    <main className="content-page content-page--narrow">
+      <Card>
+        <div className="section-heading">
+          <Badge>Team</Badge>
+          <h1>Create your first team</h1>
+          <p>Teams organize members, squads, cars and operational workspaces.</p>
+        </div>
 
-        <label>Team name</label>
-        <input placeholder="GT3 Pro Team" />
+        <Input label="Team name" defaultValue={team.name} />
+        <Input label="Category" defaultValue={team.category} />
+        <Input label="Status" defaultValue={team.status} />
 
-        <label>Category</label>
-        <input placeholder="GT3" />
-
-        <button className="primary full">Create team</button>
-      </section>
+        <Button className="full-width">Save team foundation</Button>
+      </Card>
     </main>
   )
 }

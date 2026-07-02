@@ -2,42 +2,83 @@
 
 ## Core idea
 
-Endurance Engineer is built around teams, not only races.
+Endurance Engineer is built around teams and workspaces.
 
-A team owns drivers, cars, tracks, race events, race plans, stints, telemetry sessions and AI reports.
+A team owns members, squads, cars and workspaces. A workspace owns the operational modules needed for a race, championship, training session or test day.
 
 ---
 
-## Main entities
+## Current MVP data strategy
 
-### Team
+The current MVP does not use a database or backend web service.
 
-Represents a racing team.
+Frontend data is centralized in:
+
+```text
+frontend/src/domain/mockData.js
+frontend/src/domain/constants.js
+frontend/src/domain/types.js
+```
+
+The domain folder is intentionally small during this Sprint.
+
+---
+
+## Entities
+
+### Organization
 
 Fields:
 - id
 - name
 - country
 - timezone
-- created_at
 
 Relations:
-- has many drivers
-- has many cars
-- has many race events
+- has many teams
 
 ---
 
-### Driver
+### Team
 
-Represents a driver inside a team.
+Fields:
+- id
+- organization_id
+- name
+- category
+- status
+
+Relations:
+- belongs to organization
+- has many members
+- has many squads
+- has many cars
+- has many workspaces
+
+---
+
+### Member
 
 Fields:
 - id
 - team_id
 - name
-- nickname
 - timezone
+- roles
+- strengths
+- status
+- avatar
+- notes
+
+Role values:
+- driver
+- race_engineer
+- strategist
+- spotter
+- team_manager
+- analyst
+
+Driver-specific optional fields:
 - irating
 - license_class
 - max_total_hours
@@ -45,9 +86,6 @@ Fields:
 - minimum_rest_minutes
 - can_start_race
 - can_finish_race
-- notes
-
-Performance ratings:
 - pace_rating
 - consistency_rating
 - fuel_saving_rating
@@ -57,18 +95,29 @@ Performance ratings:
 - traffic_rating
 - pressure_rating
 
-Future metrics:
-- avg_fuel_per_lap
-- avg_incidents_per_hour
-- avg_tyre_wear
-- avg_lap_time_delta
-- fatigue_profile
+Important rule:
+- Driver is not a primary entity. It is a role on Member.
+
+---
+
+### Squad
+
+Fields:
+- id
+- team_id
+- name
+- member_ids
+- reserve_member_ids
+- notes
+
+Relations:
+- belongs to team
+- has many members
+- can be selected by many workspaces over time
 
 ---
 
 ### Car
-
-Represents a car used by the team.
 
 Fields:
 - id
@@ -77,366 +126,99 @@ Fields:
 - name
 - class
 - fuel_tank_liters
-- notes
-
-Examples:
-- iRacing Ford Mustang GT3
-- BMW M4 GT3
-- Ferrari 296 GT3
-
----
-
-### Track
-
-Represents a circuit.
-
-Fields:
-- id
-- name
-- simulator
-- layout
-- length_km
-- timezone
-- notes
-
-Examples:
-- Spa-Francorchamps
-- Daytona
-- Le Mans
-- Sebring
-
----
-
-### RaceEvent
-
-Represents a specific race.
-
-Fields:
-- id
-- team_id
-- track_id
-- car_id
-- name
-- start_datetime
-- duration_hours
-- race_timezone
-- stint_estimated_minutes
-- stint_min_minutes
-- stint_max_minutes
-- pit_stop_seconds
-- notes
-
-Examples:
-- Spa 24h
-- Daytona 24h
-- Petit Le Mans
-
----
-
-### DriverAvailability
-
-Represents when a driver can race.
-
-Fields:
-- id
-- race_event_id
-- driver_id
-- available_from
-- available_to
-- preference_level
-- notes
-
-Use cases:
-- João unavailable from 03:00 to 06:00
-- Pedro prefers night stints
-
----
-
-### RaceBlock
-
-Represents blocks of the race.
-
-Fields:
-- id
-- race_event_id
-- name
-- start_time
-- end_time
-- block_type
-- notes
-
-Block types:
-- start
-- day
-- night
-- deep_night
-- morning
-- finish
-
-Examples:
-- Start block: 14:00-18:00
-- Deep night: 00:00-06:00
-- Finish: 11:00-14:00
-
----
-
-### RaceBlockDriver
-
-Defines which drivers should cover each race block.
-
-Fields:
-- id
-- race_block_id
-- driver_id
-- role
-
-Roles:
-- preferred
-- reserve
-- avoid
-
----
-
-### RacePlan
-
-Represents a generated plan for a race.
-
-Fields:
-- id
-- race_event_id
-- name
-- version
-- status
-- created_at
-- notes
-
-Statuses:
-- draft
-- approved
-- active
-- finished
-
-Examples:
-- Plan A
-- Conservative night plan
-- Fuel saving plan
-
----
-
-### Stint
-
-Represents one stint in a race plan.
-
-Fields:
-- id
-- race_plan_id
-- number
-- driver_id
-- block_id
-- planned_start
-- planned_end
-- start_window_min
-- start_window_max
-- ready_at
-- stint_type
 - status
 - notes
-
-Stint types:
-- normal
-- push
-- fuel_save
-- double_stint_tyre
-- safety_car_adjusted
-
-Statuses:
-- planned
-- ready
-- driving
-- completed
-- skipped
-- replaced
-
----
-
-### DriverState
-
-Represents live status of each driver during the race.
-
-Fields:
-- id
-- race_event_id
-- driver_id
-- state
-- updated_at
-
-States:
-- sleeping
-- resting
-- preparing
-- ready
-- in_discord
-- driving
-- unavailable
-
----
-
-### StrategySnapshot
-
-Represents race strategy at a point in time.
-
-Fields:
-- id
-- race_event_id
-- race_plan_id
-- timestamp
-- remaining_time
-- fuel_level
-- avg_fuel_per_lap
-- laps_remaining
-- pit_window
-- estimated_pit_count
-- notes
-
----
-
-### TelemetrySession
-
-Represents a captured telemetry session.
-
-Fields:
-- id
-- race_event_id
-- driver_id
-- car_id
-- track_id
-- file_path
-- session_type
-- created_at
-
-Session types:
-- practice
-- qualifying
-- race
-- stint_test
-- fuel_save_test
-
----
-
-### FuelSavePoint
-
-Represents a lift-and-coast point on track.
-
-Fields:
-- id
-- track_id
-- car_id
-- name
-- corner
-- lap_dist_pct
-- lift_distance_meters
-- expected_fuel_saved_liters
-- expected_time_loss_seconds
-- notes
-
-Examples:
-- Les Combes, lift 100m
-- Bus Stop, lift 80m
-
----
-
-### AIReport
-
-Represents an AI-generated report.
-
-Fields:
-- id
-- race_event_id
-- driver_id
-- telemetry_session_id
-- report_type
-- content
-- created_at
-
-Report types:
-- stint_summary
-- tyre_analysis
-- fuel_analysis
-- driver_fatigue
-- race_debrief
-
----
-
-## First MVP entities
-
-For the first usable version, we only need:
-
-1. Team
-2. Driver
-3. Car
-4. Track
-5. RaceEvent
-6. RaceBlock
-7. RaceBlockDriver
-8. RacePlan
-9. Stint
-
-Telemetry, fuel saving, AI and live state come later.
-
----
-
-## Lineup
-
-Represents a group of drivers inside a team.
-
-A team can have many lineups. A race event should use one lineup, instead of using all team drivers.
-
-Fields:
-- id
-- team_id
-- name
-- category
-- notes
-- created_at
-
-Examples:
-- GT3 Pro Lineup
-- GT3 AM Lineup
-- Spa 24h Lineup
-- Daytona 24h Lineup
 
 Relations:
 - belongs to team
-- has many lineup drivers
-- can be assigned to race events
+- can be selected by a workspace
 
 ---
 
-## LineupDriver
-
-Represents a driver inside a lineup.
+### Workspace
 
 Fields:
 - id
-- lineup_id
-- driver_id
-- role
-- notes
+- team_id
+- type
+- name
+- status
+- car_id
+- squad_id
+- track_name
+- duration_hours
+- timezone
+- phase_progress
+- summary
 
-Roles:
-- main
-- reserve
-- manager
-- engineer
-- spotter
+Type values:
+- race
+- championship
+- training
+- test_day
+
+Status values:
+- planning
+- ready
+- active
+- finished
+- archived
+
+Relations:
+- belongs to team
+- references one primary squad
+- references one primary car when relevant
+- has many plans, documents, files and reports
 
 ---
 
-## RaceEvent update
+### WorkspaceDocument
 
-RaceEvent should reference a lineup.
+Fields:
+- id
+- workspace_id
+- title
+- status
+- owner
 
-New field:
-- lineup_id
+---
 
-This means an event does not automatically use every driver in the team. It uses the selected lineup for that event.
+### WorkspacePlan
+
+Fields:
+- id
+- workspace_id
+- title
+- status
+- progress
+- type
+
+Plan types:
+- stint
+- fuel
+- tires
+- strategy
+- contingency
+
+---
+
+### WorkspaceFile
+
+Fields:
+- id
+- workspace_id
+- name
+- type
+- status
+
+---
+
+### WorkspaceReport
+
+Fields:
+- id
+- workspace_id
+- title
+- status
+
+Reports are placeholders in this Sprint. AI and telemetry are explicitly not implemented.

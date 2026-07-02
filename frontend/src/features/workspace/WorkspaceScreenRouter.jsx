@@ -1,0 +1,25 @@
+import { useOutletContext } from 'react-router-dom'
+import OverviewScreen from './screens/OverviewScreen'
+import MembersScreen from './screens/MembersScreen'
+import DocumentsScreen from './screens/DocumentsScreen'
+import PlansScreen from './screens/PlansScreen'
+import FilesScreen from './screens/FilesScreen'
+import ReportsScreen from './screens/ReportsScreen'
+import SettingsScreen from './screens/SettingsScreen'
+
+const screens = {
+  overview: OverviewScreen,
+  members: MembersScreen,
+  documents: DocumentsScreen,
+  plans: PlansScreen,
+  files: FilesScreen,
+  reports: ReportsScreen,
+  settings: SettingsScreen,
+}
+
+export default function WorkspaceScreenRouter({ screen }) {
+  const { workspace } = useOutletContext()
+  const Screen = screens[screen]
+
+  return <Screen workspace={workspace} />
+}

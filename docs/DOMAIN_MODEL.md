@@ -4,26 +4,27 @@
 
 Endurance Engineer is the operating system for endurance racing teams.
 
-The product is team-centered, not driver-centered.
+The product is team-centered and workspace-centered, not driver-centered and not stint-planner-centered.
 
 ---
 
 ## Core hierarchy
 
+```text
 Organization
   -> Team
-    -> Members
-    -> Squads
-    -> Cars
-    -> Events
-      -> Race Workspace
-        -> Planner
-        -> Race Book
-        -> Strategy
-        -> Checklist
-        -> Notes
-        -> Telemetry
-        -> AI Reports
+    -> Member
+    -> Squad
+    -> Car
+    -> Workspace
+      -> Plans
+      -> Documents
+      -> Files
+      -> Reports
+      -> Settings
+```
+
+This hierarchy is the shared language for product, frontend, future backend and documentation.
 
 ---
 
@@ -31,14 +32,15 @@ Organization
 
 Represents the top-level account.
 
-Example:
+Examples:
 - Titan Racing
 - Apex Endurance
 - Williams Esports
 
 Rules:
 - An organization can have multiple teams.
-- An organization owns billing, permissions and global settings.
+- An organization owns billing, permissions and global settings in future SaaS versions.
+- An organization is not tied to a single race or simulator.
 
 ---
 
@@ -47,14 +49,15 @@ Rules:
 Represents a racing division inside an organization.
 
 Examples:
-- GT3 Pro
-- GT3 AM
+- GT3 Pro Team
+- GT3 AM Team
 - Prototype Team
 - Academy Team
 
 Rules:
 - A team belongs to one organization.
-- A team has members, squads, cars and events.
+- A team owns members, squads, cars and workspaces.
+- A team is the main operational container for endurance activity.
 
 ---
 
@@ -62,7 +65,7 @@ Rules:
 
 Represents any person inside a team.
 
-A member is not always a driver.
+A member is not always a driver. Driver is a role of a member.
 
 Roles:
 - driver
@@ -80,8 +83,9 @@ Common fields:
 - email
 - phone
 - notes
+- roles
 
-Driver-specific fields:
+Driver-role fields:
 - irating
 - license_class
 - pace_rating
@@ -96,20 +100,20 @@ Driver-specific fields:
 Rules:
 - A member can have multiple roles.
 - A member can belong to multiple squads.
-- Only members with driver role can be assigned to driving stints.
+- Only members with the driver role can be assigned to driving stints.
+- The codebase should not use Driver as a primary entity name.
 
 ---
 
 ## Squad
 
-Represents the group selected for a race or season.
-
-This replaces the old idea of Lineup.
+Represents the group selected for a workspace.
 
 Examples:
 - Spa 24h Squad
 - Daytona GT3 Pro Squad
-- Endurance Series Round 1 Squad
+- Training Crew
+- Test Day Crew
 
 A squad may include:
 - drivers
@@ -117,31 +121,13 @@ A squad may include:
 - strategists
 - spotters
 - team managers
+- analysts
 
 Rules:
 - A squad belongs to one team.
 - A squad can contain many members.
-- A squad can be reused across multiple events.
-- A race event uses one primary squad.
-
----
-
-## SquadMember
-
-Represents a member inside a squad.
-
-Fields:
-- squad_id
-- member_id
-- role_in_squad
-- is_reserve
-- notes
-
-Examples:
-- Lucas as driver
-- João as race engineer
-- Carlos as spotter
-- Pedro as reserve driver
+- A squad can be reused across multiple workspaces.
+- A workspace uses one primary squad at a time.
 
 ---
 
@@ -163,183 +149,61 @@ Fields:
 
 Rules:
 - A team can have many cars.
-- An event uses one main car.
+- A workspace can select one primary car.
+- Cars are team assets, not workspace-only records.
 
 ---
 
-## Event
+## Workspace
 
-Represents a race weekend.
+Represents the operational hub for one endurance activity.
 
-Examples:
-- Spa 24h
-- Daytona 24h
-- Petit Le Mans
-- Le Mans 24h
+The workspace is the main product object.
 
-Fields:
-- team_id
-- squad_id
-- car_id
-- track_id
-- name
-- start_datetime
-- duration_hours
-- timezone
-- stint_estimated_minutes
-- pit_stop_seconds
-- notes
+Workspace types:
+- race
+- championship
+- training
+- test_day
 
-Rules:
-- An event belongs to one team.
-- An event uses one squad.
-- An event uses one car.
-- An event creates one Race Workspace.
-
----
-
-## Race Workspace
-
-Represents the operational hub for one event.
+Workspace statuses:
+- planning
+- ready
+- active
+- finished
+- archived
 
 Modules:
-- Dashboard
+- Overview
 - Members
-- Planner
-- Race Book
-- Strategy
-- Checklist
-- Notes
+- Documents
+- Plans
 - Files
-- Telemetry
-- AI Reports
+- Reports
+- Settings
 
 Rules:
-- The workspace is where the team operates the race.
-- The dashboard should show what the team needs to do now.
-- The workspace is event-specific.
+- A workspace belongs to one team.
+- A workspace uses one primary squad.
+- A workspace may use one primary car.
+- A workspace is not always a race.
+- Future telemetry, AI and backend integrations should attach to the workspace boundary.
 
 ---
 
-## Planner
+## Plans
 
-Generates and manages stints.
+Plans represent operational planning inside a workspace.
 
-Inputs:
-- event duration
-- stint duration estimate
-- squad drivers
-- driver availability
-- max hours
-- rest rules
-- fatigue rules
-- preferred race blocks
-
-Outputs:
-- planned stints
-- driver ready windows
-- fatigue warnings
-- schedule conflicts
+Examples:
+- Stint Plan
+- Fuel Plan
+- Tire Plan
+- Strategy Plan
+- Contingency Plan
 
 Rules:
-- Only squad members with driver role can receive stints.
-- The planner must support recalculation during the race.
-- Stint times are estimates, not fixed absolute truth.
-
----
-
-## Race Book
-
-Represents the structured documentation for a race weekend.
-
-Sections:
-- weekend schedule
-- server information
-- Discord information
-- car setup notes
-- pit rules
-- fuel notes
-- tyre notes
-- driver briefing
-- track limits
-- procedures
-- emergency plan
-- checklist
-
-Rules:
-- Race Book replaces Google Docs / Notion / scattered notes.
-- Race Book belongs to one event workspace.
-
----
-
-## Strategy
-
-Represents fuel, tyre and pit planning.
-
-Future areas:
-- fuel stint length
-- tyre double stint
-- pit windows
-- lift and coast plans
-- safety car scenarios
-- rain scenarios
-
----
-
-## Telemetry
-
-Represents telemetry sessions connected to an event.
-
-Future areas:
-- fuel usage
-- tyre degradation
-- lift and coast efficiency
-- driver comparison
-- stint analysis
-
----
-
-## AI Engineer
-
-Represents future AI-generated recommendations.
-
-Future examples:
-- driver fatigue alerts
-- fuel saving recommendations
-- tyre management analysis
-- race debriefs
-- lift and coast instructions
-
----
-
-## Important naming decisions
-
-Use Member instead of Driver as the main person entity.
-
-Use Squad instead of Lineup.
-
-Use Event for a race weekend.
-
-Use Race Workspace for the operational area of one event.
-
----
-
-## MVP scope
-
-The first MVP includes:
-- Organization
-- Team
-- Members
-- Squads
-- Cars
-- Events
-- Race Workspace
-- Planner
-- Race Book
-
-The first MVP does not include:
-- AI
-- voice engineer
-- live telemetry
-- payments
-- public team sharing
+- A plan belongs to a workspace.
+- A workspace can have many plans.
+- A plan can be draft, approved, active, finished or archived.
+- Stint planning is one plan type, not the whole product.
