@@ -59,3 +59,9 @@ python stint_planner.py
 ```
 
 The planner currently reads `config.json` from the repository root. It remains temporary and will be revisited in a future backend integration Sprint.
+
+## Milestone 2 — Mission Control
+
+The Workspace Overview now acts as Mission Control: a card-based operational summary for race preparation.
+
+Mission Control remains frontend-only and uses mocked data. It surfaces workspace status, next action, countdown, preparation progress, module readiness, team status and upcoming schedule without adding backend, database, authentication, AI or telemetry.

@@ -23,3 +23,7 @@ npm run build
 npm run lint
 npm run preview
 ```
+
+## Mission Control
+
+The workspace overview renders Mission Control from mocked workspace services and reusable workspace cards. The UI consumes derived data for progress, checklist, next action, countdown and team status.

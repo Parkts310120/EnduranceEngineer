@@ -381,3 +381,197 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.mission-control {
+  max-width: 1440px;
+}
+
+.mission-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -80px -120px auto;
+  width: 260px;
+  height: 260px;
+  background: rgba(124, 92, 255, 0.18);
+  border-radius: 999px;
+  filter: blur(8px);
+}
+
+.mission-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mission-hero__aside {
+  display: grid;
+  gap: 18px;
+  justify-items: end;
+  min-width: min(360px, 100%);
+}
+
+.phase-list,
+.mission-card-header,
+.mission-card-heading,
+.action-footer,
+.mission-stack-row,
+.module-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.phase-list {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mission-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mission-summary-card h2,
+.mission-card-heading h2,
+.checklist-card h2,
+.modules-card h2,
+.team-card h2,
+.schedule-card h2 {
+  margin: 8px 0;
+}
+
+.mission-card-header {
+  color: #6f7890;
+  font-size: 12px;
+}
+
+.mission-layout {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 18px;
+}
+
+.next-action-card,
+.progress-card,
+.checklist-card,
+.modules-card,
+.team-card,
+.schedule-card {
+  min-height: 100%;
+}
+
+.mission-card-heading {
+  margin-bottom: 18px;
+}
+
+.mission-card-heading strong {
+  font-size: 28px;
+}
+
+.action-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 22px;
+  padding-top: 18px;
+  color: #cbd3e3;
+}
+
+.progress-card .ui-progress {
+  margin-bottom: 16px;
+}
+
+.mission-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mission-stack-list,
+.timeline-list,
+.module-status-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.mission-stack-row,
+.module-status,
+.timeline-item {
+  background: #11151f;
+  border: 1px solid #252a3a;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.mission-stack-row small,
+.timeline-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.module-status-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #6f7890;
+}
+
+.status-dot--success {
+  background: var(--success);
+}
+
+.status-dot--warning {
+  background: #ffc658;
+}
+
+.timeline-item {
+  display: grid;
+  gap: 4px;
+}
+
+.ui-badge--warning {
+  background: rgba(255, 198, 88, 0.12);
+  border-color: rgba(255, 198, 88, 0.3);
+  color: #ffd98a;
+}
+
+@media (max-width: 1180px) {
+  .mission-summary-grid,
+  .mission-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mission-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .mission-hero__aside,
+  .phase-list,
+  .mission-card-header,
+  .mission-card-heading,
+  .action-footer {
+    align-items: stretch;
+    justify-items: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .mission-summary-grid,
+  .mission-columns,
+  .module-status-grid {
+    grid-template-columns: 1fr;
+  }
+}

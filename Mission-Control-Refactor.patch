@@ -1,0 +1,714 @@
+From dec243db9290892aa960501f3d45c8fa3d68ff5a Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Thu, 2 Jul 2026 17:39:07 +0000
+Subject: [PATCH] Add Mission Control overview on Sprint 3 base
+
+---
+ README.md                                     |   6 +
+ frontend/README.md                            |   4 +
+ frontend/src/app/styles.css                   | 194 ++++++++++++++++++
+ .../components/CompletedModulesCard.jsx       |  18 ++
+ .../workspace/components/MissionHero.jsx      |  25 +++
+ .../components/MissionSummaryGrid.jsx         |  18 ++
+ .../workspace/components/NextActionCard.jsx   |  22 ++
+ .../components/PreparationChecklistCard.jsx   |  19 ++
+ .../workspace/components/ProgressCard.jsx     |  18 ++
+ .../workspace/components/TeamStatusCard.jsx   |  22 ++
+ .../components/UpcomingScheduleCard.jsx       |  18 ++
+ .../workspace/screens/OverviewScreen.jsx      |  49 ++---
+ .../workspace/services/countdownService.js    |   7 +
+ .../workspace/services/workspaceService.js    | 162 +++++++++++++++
+ 14 files changed, 558 insertions(+), 24 deletions(-)
+ create mode 100644 frontend/src/features/workspace/components/CompletedModulesCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/MissionHero.jsx
+ create mode 100644 frontend/src/features/workspace/components/MissionSummaryGrid.jsx
+ create mode 100644 frontend/src/features/workspace/components/NextActionCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/PreparationChecklistCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/ProgressCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/TeamStatusCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/UpcomingScheduleCard.jsx
+ create mode 100644 frontend/src/features/workspace/services/countdownService.js
+ create mode 100644 frontend/src/features/workspace/services/workspaceService.js
+
+diff --git a/README.md b/README.md
+index b80a0ac..7b57bd4 100644
+--- a/README.md
++++ b/README.md
+@@ -59,3 +59,9 @@ python stint_planner.py
+ ```
+ 
+ The planner currently reads `config.json` from the repository root. It remains temporary and will be revisited in a future backend integration Sprint.
++
++## Milestone 2 — Mission Control
++
++The Workspace Overview now acts as Mission Control: a card-based operational summary for race preparation.
++
++Mission Control remains frontend-only and uses mocked data. It surfaces workspace status, next action, countdown, preparation progress, module readiness, team status and upcoming schedule without adding backend, database, authentication, AI or telemetry.
+diff --git a/frontend/README.md b/frontend/README.md
+index 993e4d7..8c320a6 100644
+--- a/frontend/README.md
++++ b/frontend/README.md
+@@ -23,3 +23,7 @@ npm run build
+ npm run lint
+ npm run preview
+ ```
++
++## Mission Control
++
++The workspace overview renders Mission Control from mocked workspace services and reusable workspace cards. The UI consumes derived data for progress, checklist, next action, countdown and team status.
+diff --git a/frontend/src/app/styles.css b/frontend/src/app/styles.css
+index 51aca86..b5984fa 100644
+--- a/frontend/src/app/styles.css
++++ b/frontend/src/app/styles.css
+@@ -381,3 +381,197 @@ a {
+     grid-template-columns: 1fr;
+   }
+ }
++
++.mission-control {
++  max-width: 1440px;
++}
++
++.mission-hero {
++  position: relative;
++  overflow: hidden;
++}
++
++.mission-hero::after {
++  content: '';
++  position: absolute;
++  inset: auto -80px -120px auto;
++  width: 260px;
++  height: 260px;
++  background: rgba(124, 92, 255, 0.18);
++  border-radius: 999px;
++  filter: blur(8px);
++}
++
++.mission-hero > * {
++  position: relative;
++  z-index: 1;
++}
++
++.mission-hero__aside {
++  display: grid;
++  gap: 18px;
++  justify-items: end;
++  min-width: min(360px, 100%);
++}
++
++.phase-list,
++.mission-card-header,
++.mission-card-heading,
++.action-footer,
++.mission-stack-row,
++.module-status {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 16px;
++}
++
++.phase-list {
++  flex-wrap: wrap;
++  justify-content: flex-end;
++}
++
++.mission-summary-grid {
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 18px;
++}
++
++.mission-summary-card h2,
++.mission-card-heading h2,
++.checklist-card h2,
++.modules-card h2,
++.team-card h2,
++.schedule-card h2 {
++  margin: 8px 0;
++}
++
++.mission-card-header {
++  color: #6f7890;
++  font-size: 12px;
++}
++
++.mission-layout {
++  display: grid;
++  grid-template-columns: 1.35fr 1fr;
++  gap: 18px;
++}
++
++.next-action-card,
++.progress-card,
++.checklist-card,
++.modules-card,
++.team-card,
++.schedule-card {
++  min-height: 100%;
++}
++
++.mission-card-heading {
++  margin-bottom: 18px;
++}
++
++.mission-card-heading strong {
++  font-size: 28px;
++}
++
++.action-footer {
++  border-top: 1px solid var(--border);
++  margin-top: 22px;
++  padding-top: 18px;
++  color: #cbd3e3;
++}
++
++.progress-card .ui-progress {
++  margin-bottom: 16px;
++}
++
++.mission-columns {
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 18px;
++}
++
++.mission-stack-list,
++.timeline-list,
++.module-status-grid {
++  display: grid;
++  gap: 12px;
++  margin-top: 18px;
++}
++
++.mission-stack-row,
++.module-status,
++.timeline-item {
++  background: #11151f;
++  border: 1px solid #252a3a;
++  border-radius: 14px;
++  padding: 12px;
++}
++
++.mission-stack-row small,
++.timeline-item span {
++  display: block;
++  color: var(--muted);
++  font-size: 12px;
++  margin-top: 4px;
++}
++
++.module-status-grid {
++  grid-template-columns: repeat(2, 1fr);
++}
++
++.status-dot {
++  width: 10px;
++  height: 10px;
++  border-radius: 999px;
++  background: #6f7890;
++}
++
++.status-dot--success {
++  background: var(--success);
++}
++
++.status-dot--warning {
++  background: #ffc658;
++}
++
++.timeline-item {
++  display: grid;
++  gap: 4px;
++}
++
++.ui-badge--warning {
++  background: rgba(255, 198, 88, 0.12);
++  border-color: rgba(255, 198, 88, 0.3);
++  color: #ffd98a;
++}
++
++@media (max-width: 1180px) {
++  .mission-summary-grid,
++  .mission-columns {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++
++  .mission-layout {
++    grid-template-columns: 1fr;
++  }
++}
++
++@media (max-width: 860px) {
++  .mission-hero__aside,
++  .phase-list,
++  .mission-card-header,
++  .mission-card-heading,
++  .action-footer {
++    align-items: stretch;
++    justify-items: stretch;
++  }
++}
++
++@media (max-width: 720px) {
++  .mission-summary-grid,
++  .mission-columns,
++  .module-status-grid {
++    grid-template-columns: 1fr;
++  }
++}
+diff --git a/frontend/src/features/workspace/components/CompletedModulesCard.jsx b/frontend/src/features/workspace/components/CompletedModulesCard.jsx
+new file mode 100644
+index 0000000..93c408e
+--- /dev/null
++++ b/frontend/src/features/workspace/components/CompletedModulesCard.jsx
+@@ -0,0 +1,18 @@
++import Card from '../../../shared/ui/Card'
++
++export default function CompletedModulesCard({ modules }) {
++  return (
++    <Card className="modules-card">
++      <span className="eyebrow">Completed modules</span>
++      <h2>Workspace modules</h2>
++      <div className="module-status-grid">
++        {modules.map((module) => (
++          <div className="module-status" key={module.name}>
++            <span>{module.name}</span>
++            <span className={`status-dot status-dot--${module.tone}`} />
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/MissionHero.jsx b/frontend/src/features/workspace/components/MissionHero.jsx
+new file mode 100644
+index 0000000..8f959b2
+--- /dev/null
++++ b/frontend/src/features/workspace/components/MissionHero.jsx
+@@ -0,0 +1,25 @@
++import Badge from '../../../shared/ui/Badge'
++import Progress from '../../../shared/ui/Progress'
++
++export default function MissionHero({ phases, workspaceStatus }) {
++  return (
++    <section className="workspace-hero mission-hero">
++      <div>
++        <span className="eyebrow">Mission Control</span>
++        <h2>{workspaceStatus.raceState}</h2>
++        <p>{workspaceStatus.summary}</p>
++      </div>
++
++      <div className="mission-hero__aside">
++        <Progress value={workspaceStatus.progress} label="Preparation readiness" />
++        <div className="phase-list" aria-label="Workspace phase">
++          {phases.map((phase) => (
++            <Badge key={phase} tone={phase === workspaceStatus.phase ? 'accent' : 'neutral'}>
++              {phase}
++            </Badge>
++          ))}
++        </div>
++      </div>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/MissionSummaryGrid.jsx b/frontend/src/features/workspace/components/MissionSummaryGrid.jsx
+new file mode 100644
+index 0000000..585e0ed
+--- /dev/null
++++ b/frontend/src/features/workspace/components/MissionSummaryGrid.jsx
+@@ -0,0 +1,18 @@
++import Card from '../../../shared/ui/Card'
++
++export default function MissionSummaryGrid({ cards }) {
++  return (
++    <section className="mission-summary-grid" aria-label="Mission control summary">
++      {cards.map((card) => (
++        <Card className="mission-summary-card" key={card.label} tone={card.tone === 'highlight' ? 'highlight' : 'default'}>
++          <div className="mission-card-header">
++            <span className="eyebrow">{card.label}</span>
++            {card.meta ? <span>{card.meta}</span> : null}
++          </div>
++          <h2>{card.title}</h2>
++          <p>{card.description}</p>
++        </Card>
++      ))}
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/NextActionCard.jsx b/frontend/src/features/workspace/components/NextActionCard.jsx
+new file mode 100644
+index 0000000..4351703
+--- /dev/null
++++ b/frontend/src/features/workspace/components/NextActionCard.jsx
+@@ -0,0 +1,22 @@
++import Badge from '../../../shared/ui/Badge'
++import Button from '../../../shared/ui/Button'
++import Card from '../../../shared/ui/Card'
++
++export default function NextActionCard({ action }) {
++  return (
++    <Card className="next-action-card">
++      <div className="mission-card-heading">
++        <div>
++          <span className="eyebrow">Next action</span>
++          <h2>{action.title}</h2>
++        </div>
++        <Badge tone="accent">{action.due}</Badge>
++      </div>
++      <p>{action.description}</p>
++      <div className="action-footer">
++        <span>{action.owner}</span>
++        <Button>Review action</Button>
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/PreparationChecklistCard.jsx b/frontend/src/features/workspace/components/PreparationChecklistCard.jsx
+new file mode 100644
+index 0000000..0155072
+--- /dev/null
++++ b/frontend/src/features/workspace/components/PreparationChecklistCard.jsx
+@@ -0,0 +1,19 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function PreparationChecklistCard({ checklist }) {
++  return (
++    <Card className="checklist-card">
++      <span className="eyebrow">Preparation checklist</span>
++      <h2>Before race mode</h2>
++      <div className="mission-stack-list">
++        {checklist.map((task) => (
++          <div className="mission-stack-row" key={task.item}>
++            <span>{task.item}</span>
++            <Badge tone={task.tone}>{task.status}</Badge>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/ProgressCard.jsx b/frontend/src/features/workspace/components/ProgressCard.jsx
+new file mode 100644
+index 0000000..4a9e512
+--- /dev/null
++++ b/frontend/src/features/workspace/components/ProgressCard.jsx
+@@ -0,0 +1,18 @@
++import Card from '../../../shared/ui/Card'
++import Progress from '../../../shared/ui/Progress'
++
++export default function ProgressCard({ progress }) {
++  return (
++    <Card className="progress-card">
++      <div className="mission-card-heading">
++        <div>
++          <span className="eyebrow">Progress card</span>
++          <h2>Preparation readiness</h2>
++        </div>
++        <strong>{progress}%</strong>
++      </div>
++      <Progress value={progress} label="Preparation progress" />
++      <p>Target: 90% before final team briefing.</p>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/TeamStatusCard.jsx b/frontend/src/features/workspace/components/TeamStatusCard.jsx
+new file mode 100644
+index 0000000..274c1b7
+--- /dev/null
++++ b/frontend/src/features/workspace/components/TeamStatusCard.jsx
+@@ -0,0 +1,22 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function TeamStatusCard({ teamStatus }) {
++  return (
++    <Card className="team-card">
++      <span className="eyebrow">Team status card</span>
++      <h2>Squad readiness</h2>
++      <div className="mission-stack-list compact">
++        {teamStatus.members.map((member) => (
++          <div className="mission-stack-row" key={member.name}>
++            <div>
++              <strong>{member.name}</strong>
++              <small>{member.role}</small>
++            </div>
++            <Badge tone={member.tone}>{member.state}</Badge>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/UpcomingScheduleCard.jsx b/frontend/src/features/workspace/components/UpcomingScheduleCard.jsx
+new file mode 100644
+index 0000000..bf34742
+--- /dev/null
++++ b/frontend/src/features/workspace/components/UpcomingScheduleCard.jsx
+@@ -0,0 +1,18 @@
++import Card from '../../../shared/ui/Card'
++
++export default function UpcomingScheduleCard({ schedule }) {
++  return (
++    <Card className="schedule-card">
++      <span className="eyebrow">Upcoming schedule card</span>
++      <h2>Next milestones</h2>
++      <div className="timeline-list">
++        {schedule.map((event) => (
++          <div className="timeline-item" key={event.title}>
++            <span>{event.time}</span>
++            <strong>{event.title}</strong>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/screens/OverviewScreen.jsx b/frontend/src/features/workspace/screens/OverviewScreen.jsx
+index a719198..003e4d9 100644
+--- a/frontend/src/features/workspace/screens/OverviewScreen.jsx
++++ b/frontend/src/features/workspace/screens/OverviewScreen.jsx
+@@ -1,32 +1,33 @@
+-import { WORKSPACE_NAVIGATION } from '../../../domain/constants'
+-import Progress from '../../../shared/ui/Progress'
+-import WorkspaceModuleCard from '../components/WorkspaceModuleCard'
+-
+-const modules = [
+-  { title: 'Members', path: 'members', status: 'Ready', description: 'Workspace squad, crew roles and operational responsibilities.' },
+-  { title: 'Documents', path: 'documents', status: 'Draft', description: 'Race book, driver briefing, procedures and reference notes.' },
+-  { title: 'Plans', path: 'plans', status: 'Draft', description: 'Stint, fuel, tyre and contingency plans for the workspace.' },
+-  { title: 'Files', path: 'files', status: 'Ready', description: 'Setups, PDFs, images and files connected to this operation.' },
+-  { title: 'Reports', path: 'reports', status: 'Future', description: 'Preparation and post-session reports for long-term learning.' },
+-  { title: 'Settings', path: 'settings', status: 'Ready', description: 'Workspace type, car, squad, timezone and status configuration.' },
+-]
++import CompletedModulesCard from '../components/CompletedModulesCard'
++import MissionHero from '../components/MissionHero'
++import MissionSummaryGrid from '../components/MissionSummaryGrid'
++import NextActionCard from '../components/NextActionCard'
++import PreparationChecklistCard from '../components/PreparationChecklistCard'
++import ProgressCard from '../components/ProgressCard'
++import TeamStatusCard from '../components/TeamStatusCard'
++import UpcomingScheduleCard from '../components/UpcomingScheduleCard'
++import { getWorkspaceMissionControl } from '../services/workspaceService'
+ 
+ export default function OverviewScreen({ workspace }) {
++  const missionControl = getWorkspaceMissionControl(workspace)
++  const { checklist, missionCards, modules, nextAction, phases, progress, schedule, teamStatus, workspaceStatus } =
++    missionControl
++
+   return (
+-    <div className="screen-stack">
+-      <section className="workspace-hero">
+-        <div>
+-          <span className="eyebrow">Operational hub</span>
+-          <h2>{workspace.status === 'planning' ? 'Planning phase' : 'Workspace ready'}</h2>
+-          <p>{workspace.summary}</p>
+-        </div>
+-        <Progress value={workspace.phaseProgress} label="Foundation readiness" />
++    <div className="screen-stack mission-control">
++      <MissionHero phases={phases} workspaceStatus={workspaceStatus} />
++      <MissionSummaryGrid cards={missionCards} />
++
++      <section className="mission-layout">
++        <NextActionCard action={nextAction} />
++        <ProgressCard progress={progress} />
+       </section>
+ 
+-      <section className="module-grid" aria-label="Workspace modules">
+-        {modules
+-          .filter((module) => WORKSPACE_NAVIGATION.some((item) => item.path === module.path))
+-          .map((module) => <WorkspaceModuleCard key={module.title} module={module} />)}
++      <section className="mission-columns">
++        <PreparationChecklistCard checklist={checklist} />
++        <CompletedModulesCard modules={modules} />
++        <TeamStatusCard teamStatus={teamStatus} />
++        <UpcomingScheduleCard schedule={schedule} />
+       </section>
+     </div>
+   )
+diff --git a/frontend/src/features/workspace/services/countdownService.js b/frontend/src/features/workspace/services/countdownService.js
+new file mode 100644
+index 0000000..ea996a5
+--- /dev/null
++++ b/frontend/src/features/workspace/services/countdownService.js
+@@ -0,0 +1,7 @@
++export function getCountdown(event) {
++  return {
++    title: event.timeLeft,
++    description: `Until green flag on ${event.greenFlagLabel}.`,
++    meta: 'Event clock',
++  }
++}
+diff --git a/frontend/src/features/workspace/services/workspaceService.js b/frontend/src/features/workspace/services/workspaceService.js
+new file mode 100644
+index 0000000..7455c68
+--- /dev/null
++++ b/frontend/src/features/workspace/services/workspaceService.js
+@@ -0,0 +1,162 @@
++import { getCountdown } from './countdownService'
++
++const missionControlState = {
++  event: {
++    timeLeft: '18d 06h',
++    greenFlagLabel: 'Saturday at 16:30 CEST',
++  },
++  phases: ['Planning', 'Ready', 'Race', 'Finished', 'Archived'],
++  readinessItems: [
++    { item: 'Race workspace created', state: 'done', weight: 20 },
++    { item: 'Driver roster validated', state: 'done', weight: 20 },
++    { item: 'Stint and fuel plan drafted', state: 'done', weight: 20 },
++    { item: 'Briefing documents uploaded', state: 'inReview', weight: 20, partialProgress: 12 },
++    { item: 'Spotter schedule confirmed', state: 'open', weight: 20 },
++  ],
++  actions: [
++    {
++      title: 'Confirm night stint rotation',
++      owner: 'Race engineer',
++      due: 'Today · 18:00',
++      description: 'Review the final double-stint sequence and confirm driver availability before publishing the briefing.',
++      relatedState: 'inReview',
++      priority: 1,
++    },
++  ],
++  modules: [
++    { name: 'Overview', state: 'Complete' },
++    { name: 'Members', state: 'Complete' },
++    { name: 'Documents', state: 'In review' },
++    { name: 'Plans', state: 'In review' },
++    { name: 'Files', state: 'Open' },
++    { name: 'Settings', state: 'Complete' },
++  ],
++  team: {
++    ready: 6,
++    total: 7,
++    description: 'Drivers and engineers are available. One spotter confirmation remains open.',
++    members: [
++      { name: 'Pedro', role: 'Driver', state: 'Ready' },
++      { name: 'Marina', role: 'Driver', state: 'Ready' },
++      { name: 'Lucas', role: 'Engineer', state: 'Ready' },
++      { name: 'Rafael', role: 'Spotter', state: 'Pending' },
++    ],
++  },
++  schedule: [
++    { time: 'Today · 18:00', title: 'Night stint rotation review' },
++    { time: 'Tomorrow · 11:30', title: 'Setup and tyre window sync' },
++    { time: 'Friday · 20:00', title: 'Final team briefing' },
++  ],
++}
++
++const checklistStatusByState = {
++  done: 'Done',
++  inReview: 'In review',
++  open: 'Open',
++}
++
++function getStatusTone(state) {
++  if (state === 'Done' || state === 'Complete' || state === 'Ready') return 'success'
++  if (state === 'In review' || state === 'Pending') return 'warning'
++  return 'neutral'
++}
++
++function getChecklist(readinessItems) {
++  return readinessItems.map((item) => {
++    const status = checklistStatusByState[item.state]
++
++    return {
++      item: item.item,
++      status,
++      tone: getStatusTone(status),
++    }
++  })
++}
++
++function getProgress(readinessItems) {
++  return readinessItems.reduce((total, item) => {
++    if (item.state === 'done') return total + item.weight
++    if (item.state === 'inReview') return total + item.partialProgress
++    return total
++  }, 0)
++}
++
++function getNextAction(workspaceState) {
++  const activeStates = workspaceState.readinessItems
++    .filter((item) => item.state !== 'done')
++    .map((item) => item.state)
++
++  return workspaceState.actions
++    .filter((action) => activeStates.includes(action.relatedState))
++    .sort((first, second) => first.priority - second.priority)[0]
++}
++
++function getTeamStatus(team) {
++  return {
++    title: `${team.ready} / ${team.total} ready`,
++    description: team.description,
++    members: team.members.map((member) => ({
++      ...member,
++      tone: getStatusTone(member.state),
++    })),
++  }
++}
++
++export function getWorkspaceMissionControl(workspace) {
++  const progress = getProgress(missionControlState.readinessItems)
++  const checklist = getChecklist(missionControlState.readinessItems)
++  const countdown = getCountdown(missionControlState.event)
++  const nextAction = getNextAction(missionControlState)
++  const teamStatus = getTeamStatus(missionControlState.team)
++
++  return {
++    workspaceStatus: {
++      phase: 'Planning',
++      raceState: `Operational plan ${progress}% ready`,
++      summary: `${workspace.name} preparation is on track. Driver rotation, setup notes and briefing documents are aligned for the next review.`,
++      event: workspace.name,
++      car: 'Ford Mustang GT3',
++      track: workspace.trackName,
++      durationHours: workspace.durationHours,
++      progress,
++    },
++    phases: missionControlState.phases,
++    progress,
++    checklist,
++    countdown,
++    nextAction,
++    teamStatus,
++    modules: missionControlState.modules.map((module) => ({
++      ...module,
++      tone: getStatusTone(module.state),
++    })),
++    schedule: missionControlState.schedule,
++    missionCards: [
++      {
++        label: 'Current race state',
++        title: 'Planning locked for review',
++        description: 'Core race context is defined and the team is validating handoff details before race mode.',
++        tone: 'highlight',
++        meta: 'Workspace status',
++      },
++      {
++        label: 'Countdown',
++        title: countdown.title,
++        description: countdown.description,
++        meta: countdown.meta,
++      },
++      {
++        label: 'Preparation progress',
++        title: `${progress}%`,
++        description: 'Briefing, driver roster, stint plan and documents are moving toward ready state.',
++        meta: 'Progress card',
++      },
++      {
++        label: 'Team status',
++        title: teamStatus.title,
++        description: teamStatus.description,
++        meta: 'Operations',
++      },
++    ],
++  }
++}
+-- 
+2.43.0
+
