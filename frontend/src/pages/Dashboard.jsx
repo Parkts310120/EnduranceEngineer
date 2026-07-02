@@ -1,5 +1,5 @@
-import Header from '../components/layout/Header'
-import StatusCard from '../components/cards/StatusCard'
+import Header from '../shared/layout/Header'
+import StatusCard from '../shared/components/StatusCard'
 
 export default function Dashboard() {
   return (

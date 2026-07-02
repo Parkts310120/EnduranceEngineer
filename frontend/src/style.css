@@ -106,3 +106,121 @@ nav button:hover {
 .card h2 {
   margin: 10px 0;
 }
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: #171b26;
+  border: 1px solid #272d3f;
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.auth-card h1 {
+  margin-top: 24px;
+}
+
+.auth-card p {
+  color: #9ca6b8;
+}
+
+.auth-card label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  color: #c6ccda;
+}
+
+.auth-card input {
+  width: 100%;
+  background: #0f1117;
+  color: white;
+  border: 1px solid #272d3f;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.full {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.logo.large {
+  font-size: 20px;
+}
+
+.workspace-hero {
+  background: linear-gradient(135deg, #171b26, #20263a);
+  border: 1px solid #30374c;
+  border-radius: 22px;
+  padding: 26px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.workspace-hero h2 {
+  margin: 10px 0;
+  font-size: 28px;
+}
+
+.workspace-hero p {
+  margin: 0;
+  color: #9ca6b8;
+  max-width: 620px;
+}
+
+.phase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.phase {
+  border: 1px solid #30374c;
+  color: #aeb6c8;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.phase.active {
+  background: #7c5cff;
+  border-color: #7c5cff;
+  color: white;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.module-card {
+  background: #171b26;
+  border: 1px solid #272d3f;
+  border-radius: 18px;
+  padding: 20px;
+  min-height: 170px;
+}
+
+.module-card h3 {
+  margin: 10px 0;
+  font-size: 22px;
+}
+
+.module-card p {
+  color: #9ca6b8;
+  margin: 0;
+  line-height: 1.45;
+}

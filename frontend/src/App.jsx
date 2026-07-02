@@ -1,14 +1,8 @@
 import './style.css'
-import Sidebar from './components/layout/Sidebar'
-import Dashboard from './pages/Dashboard'
+import AppRouter from './router/AppRouter'
 
 function App() {
-  return (
-    <div className="app">
-      <Sidebar />
-      <Dashboard />
-    </div>
-  )
+  return <AppRouter />
 }
 
 export default App
