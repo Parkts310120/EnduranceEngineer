@@ -709,3 +709,144 @@ a {
     flex-direction: column;
   }
 }
+
+.planner-page {
+  display: grid;
+  gap: 24px;
+}
+
+.planner-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.planner-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -80px -120px auto;
+  width: 260px;
+  height: 260px;
+  background: rgba(124, 92, 255, 0.16);
+  border-radius: 999px;
+  filter: blur(8px);
+}
+
+.planner-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.planner-hero__status {
+  display: grid;
+  gap: 16px;
+  min-width: min(360px, 100%);
+}
+
+.planner-summary-grid,
+.planner-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.planner-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.planner-summary-card {
+  display: grid;
+  gap: 10px;
+}
+
+.planner-summary-card strong {
+  font-size: 34px;
+}
+
+.planner-panel h2 {
+  margin: 8px 0 18px;
+}
+
+.planner-list,
+.planner-timeline__track,
+.planner-stints__table {
+  display: grid;
+  gap: 12px;
+}
+
+.planner-list-row,
+.planner-warning,
+.planner-timeline__item,
+.planner-stints__row {
+  align-items: center;
+  background: #11151f;
+  border: 1px solid #252a3a;
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.planner-list-row,
+.planner-warning {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.planner-list-row span,
+.planner-warning p,
+.planner-timeline__item span {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.planner-row-meta {
+  align-items: flex-end;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.planner-timeline__track {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.planner-timeline__item {
+  align-content: start;
+  min-height: 112px;
+}
+
+.planner-stints__row {
+  grid-template-columns: 0.6fr 1fr 1.5fr 1fr 1fr;
+}
+
+.planner-stints__row--head {
+  background: transparent;
+  border-style: dashed;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .planner-summary-grid,
+  .planner-layout,
+  .planner-timeline__track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .planner-summary-grid,
+  .planner-layout,
+  .planner-timeline__track,
+  .planner-stints__row,
+  .planner-list-row,
+  .planner-warning {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-row-meta {
+    align-items: start;
+    justify-items: start;
+  }
+}

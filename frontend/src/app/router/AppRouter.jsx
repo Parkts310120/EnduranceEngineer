@@ -3,6 +3,7 @@ import { workspaces } from '../../domain/mockData'
 import CarsPage from '../../features/cars/CarsPage'
 import MembersPage from '../../features/members/MembersPage'
 import OrganizationPage from '../../features/organization/OrganizationPage'
+import PlannerPage from '../../features/planner/screens/PlannerPage'
 import TeamPage from '../../features/team/TeamPage'
 import WorkspaceLayout from '../../features/workspace/WorkspaceLayout'
 import WorkspaceScreenRouter from '../../features/workspace/WorkspaceScreenRouter'
@@ -17,6 +18,7 @@ export default function AppRouter() {
         <Route path="/team" element={<TeamPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/cars" element={<CarsPage />} />
+        <Route path="/planner" element={<PlannerPage />} />
         <Route path="/workspace" element={<Navigate to={`/workspaces/${defaultWorkspace}`} replace />} />
         <Route path="/workspaces/:workspaceId" element={<WorkspaceLayout />}>
           <Route index element={<WorkspaceScreenRouter screen="overview" />} />

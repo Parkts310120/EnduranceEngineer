@@ -1,0 +1,529 @@
+From 5cd949842f92f49477c99084a6a4bde1c7d7077b Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Thu, 2 Jul 2026 18:26:01 +0000
+Subject: [PATCH] Add Planner Engine MVP screen
+
+---
+ frontend/src/app/router/AppRouter.jsx         |   2 +
+ frontend/src/app/styles.css                   | 141 ++++++++++++++++++
+ .../planner/components/CarsStatus.jsx         |  25 ++++
+ .../planner/components/DriversStatus.jsx      |  25 ++++
+ .../planner/components/PlannerSummary.jsx     |  21 +++
+ .../planner/components/PlannerTimeline.jsx    |  18 +++
+ .../planner/components/SessionOverview.jsx    |  21 +++
+ .../planner/components/StintsTable.jsx        |  28 ++++
+ .../planner/components/WarningsPanel.jsx      |  22 +++
+ .../features/planner/screens/PlannerPage.jsx  |  28 ++++
+ .../planner/services/plannerService.js        |  87 +++++++++++
+ 11 files changed, 418 insertions(+)
+ create mode 100644 frontend/src/features/planner/components/CarsStatus.jsx
+ create mode 100644 frontend/src/features/planner/components/DriversStatus.jsx
+ create mode 100644 frontend/src/features/planner/components/PlannerSummary.jsx
+ create mode 100644 frontend/src/features/planner/components/PlannerTimeline.jsx
+ create mode 100644 frontend/src/features/planner/components/SessionOverview.jsx
+ create mode 100644 frontend/src/features/planner/components/StintsTable.jsx
+ create mode 100644 frontend/src/features/planner/components/WarningsPanel.jsx
+ create mode 100644 frontend/src/features/planner/screens/PlannerPage.jsx
+ create mode 100644 frontend/src/features/planner/services/plannerService.js
+
+diff --git a/frontend/src/app/router/AppRouter.jsx b/frontend/src/app/router/AppRouter.jsx
+index 6c38838..519a8af 100644
+--- a/frontend/src/app/router/AppRouter.jsx
++++ b/frontend/src/app/router/AppRouter.jsx
+@@ -3,6 +3,7 @@ import { workspaces } from '../../domain/mockData'
+ import CarsPage from '../../features/cars/CarsPage'
+ import MembersPage from '../../features/members/MembersPage'
+ import OrganizationPage from '../../features/organization/OrganizationPage'
++import PlannerPage from '../../features/planner/screens/PlannerPage'
+ import TeamPage from '../../features/team/TeamPage'
+ import WorkspaceLayout from '../../features/workspace/WorkspaceLayout'
+ import WorkspaceScreenRouter from '../../features/workspace/WorkspaceScreenRouter'
+@@ -17,6 +18,7 @@ export default function AppRouter() {
+         <Route path="/team" element={<TeamPage />} />
+         <Route path="/members" element={<MembersPage />} />
+         <Route path="/cars" element={<CarsPage />} />
++        <Route path="/planner" element={<PlannerPage />} />
+         <Route path="/workspace" element={<Navigate to={`/workspaces/${defaultWorkspace}`} replace />} />
+         <Route path="/workspaces/:workspaceId" element={<WorkspaceLayout />}>
+           <Route index element={<WorkspaceScreenRouter screen="overview" />} />
+diff --git a/frontend/src/app/styles.css b/frontend/src/app/styles.css
+index 2fc1bd2..9c776e9 100644
+--- a/frontend/src/app/styles.css
++++ b/frontend/src/app/styles.css
+@@ -709,3 +709,144 @@ a {
+     flex-direction: column;
+   }
+ }
++
++.planner-page {
++  display: grid;
++  gap: 24px;
++}
++
++.planner-hero {
++  position: relative;
++  overflow: hidden;
++}
++
++.planner-hero::after {
++  content: '';
++  position: absolute;
++  inset: auto -80px -120px auto;
++  width: 260px;
++  height: 260px;
++  background: rgba(124, 92, 255, 0.16);
++  border-radius: 999px;
++  filter: blur(8px);
++}
++
++.planner-hero > * {
++  position: relative;
++  z-index: 1;
++}
++
++.planner-hero__status {
++  display: grid;
++  gap: 16px;
++  min-width: min(360px, 100%);
++}
++
++.planner-summary-grid,
++.planner-layout {
++  display: grid;
++  gap: 18px;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++}
++
++.planner-layout {
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++}
++
++.planner-summary-card {
++  display: grid;
++  gap: 10px;
++}
++
++.planner-summary-card strong {
++  font-size: 34px;
++}
++
++.planner-panel h2 {
++  margin: 8px 0 18px;
++}
++
++.planner-list,
++.planner-timeline__track,
++.planner-stints__table {
++  display: grid;
++  gap: 12px;
++}
++
++.planner-list-row,
++.planner-warning,
++.planner-timeline__item,
++.planner-stints__row {
++  align-items: center;
++  background: #11151f;
++  border: 1px solid #252a3a;
++  border-radius: 14px;
++  display: grid;
++  gap: 12px;
++  padding: 12px;
++}
++
++.planner-list-row,
++.planner-warning {
++  grid-template-columns: minmax(0, 1fr) auto;
++}
++
++.planner-list-row span,
++.planner-warning p,
++.planner-timeline__item span {
++  color: var(--muted);
++  margin: 4px 0 0;
++}
++
++.planner-row-meta {
++  align-items: flex-end;
++  display: grid;
++  gap: 8px;
++  justify-items: end;
++}
++
++.planner-timeline__track {
++  grid-template-columns: repeat(6, minmax(0, 1fr));
++}
++
++.planner-timeline__item {
++  align-content: start;
++  min-height: 112px;
++}
++
++.planner-stints__row {
++  grid-template-columns: 0.6fr 1fr 1.5fr 1fr 1fr;
++}
++
++.planner-stints__row--head {
++  background: transparent;
++  border-style: dashed;
++  color: var(--muted);
++  font-size: 13px;
++  font-weight: 800;
++  text-transform: uppercase;
++}
++
++@media (max-width: 1180px) {
++  .planner-summary-grid,
++  .planner-layout,
++  .planner-timeline__track {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++}
++
++@media (max-width: 760px) {
++  .planner-summary-grid,
++  .planner-layout,
++  .planner-timeline__track,
++  .planner-stints__row,
++  .planner-list-row,
++  .planner-warning {
++    grid-template-columns: 1fr;
++  }
++
++  .planner-row-meta {
++    align-items: start;
++    justify-items: start;
++  }
++}
+diff --git a/frontend/src/features/planner/components/CarsStatus.jsx b/frontend/src/features/planner/components/CarsStatus.jsx
+new file mode 100644
+index 0000000..4c5cca7
+--- /dev/null
++++ b/frontend/src/features/planner/components/CarsStatus.jsx
+@@ -0,0 +1,25 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function CarsStatus({ cars }) {
++  return (
++    <Card className="planner-panel">
++      <span className="eyebrow">Cars status</span>
++      <h2>Garage readiness</h2>
++      <div className="planner-list">
++        {cars.map((car) => (
++          <div className="planner-list-row" key={car.id}>
++            <div>
++              <strong>{car.name}</strong>
++              <span>{car.setup}</span>
++            </div>
++            <div className="planner-row-meta">
++              <span>{car.fuel}</span>
++              <Badge tone={car.statusTone}>{car.statusLabel}</Badge>
++            </div>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/planner/components/DriversStatus.jsx b/frontend/src/features/planner/components/DriversStatus.jsx
+new file mode 100644
+index 0000000..c73d2c3
+--- /dev/null
++++ b/frontend/src/features/planner/components/DriversStatus.jsx
+@@ -0,0 +1,25 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function DriversStatus({ drivers }) {
++  return (
++    <Card className="planner-panel">
++      <span className="eyebrow">Drivers status</span>
++      <h2>Rotation readiness</h2>
++      <div className="planner-list">
++        {drivers.map((driver) => (
++          <div className="planner-list-row" key={driver.id}>
++            <div>
++              <strong>{driver.name}</strong>
++              <span>{driver.currentBlock}</span>
++            </div>
++            <div className="planner-row-meta">
++              <span>{driver.nextStint}</span>
++              <Badge tone={driver.statusTone}>{driver.statusLabel}</Badge>
++            </div>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/planner/components/PlannerSummary.jsx b/frontend/src/features/planner/components/PlannerSummary.jsx
+new file mode 100644
+index 0000000..2b3f144
+--- /dev/null
++++ b/frontend/src/features/planner/components/PlannerSummary.jsx
+@@ -0,0 +1,21 @@
++import Card from '../../../shared/ui/Card'
++
++export default function PlannerSummary({ summary }) {
++  const metrics = [
++    { label: 'Planned stints', value: summary.totalStints },
++    { label: 'Race length', value: summary.plannedHours },
++    { label: 'Ready drivers', value: summary.readyDrivers },
++    { label: 'Warnings', value: summary.warnings },
++  ]
++
++  return (
++    <section className="planner-summary-grid" aria-label="Planner summary">
++      {metrics.map((metric) => (
++        <Card className="planner-summary-card" key={metric.label}>
++          <span className="eyebrow">{metric.label}</span>
++          <strong>{metric.value}</strong>
++        </Card>
++      ))}
++    </section>
++  )
++}
+diff --git a/frontend/src/features/planner/components/PlannerTimeline.jsx b/frontend/src/features/planner/components/PlannerTimeline.jsx
+new file mode 100644
+index 0000000..a075a82
+--- /dev/null
++++ b/frontend/src/features/planner/components/PlannerTimeline.jsx
+@@ -0,0 +1,18 @@
++import Card from '../../../shared/ui/Card'
++
++export default function PlannerTimeline({ timeline }) {
++  return (
++    <Card className="planner-panel planner-timeline">
++      <span className="eyebrow">Planner timeline</span>
++      <h2>Race flow</h2>
++      <div className="planner-timeline__track">
++        {timeline.map((item) => (
++          <div className="planner-timeline__item" key={`${item.time}-${item.label}`}>
++            <span>{item.time}</span>
++            <strong>{item.label}</strong>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/planner/components/SessionOverview.jsx b/frontend/src/features/planner/components/SessionOverview.jsx
+new file mode 100644
+index 0000000..7b075ed
+--- /dev/null
++++ b/frontend/src/features/planner/components/SessionOverview.jsx
+@@ -0,0 +1,21 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++import Progress from '../../../shared/ui/Progress'
++
++export default function SessionOverview({ session }) {
++  return (
++    <section className="workspace-hero planner-hero">
++      <div>
++        <span className="eyebrow">Planner Engine</span>
++        <h2>{session.event}</h2>
++        <p>
++          {session.track} • {session.carClass} • {session.raceLength} • {session.startTime}
++        </p>
++      </div>
++      <Card className="planner-hero__status">
++        <Badge tone="accent">{session.phase}</Badge>
++        <Progress value={session.readiness} label="Plan readiness" />
++      </Card>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/planner/components/StintsTable.jsx b/frontend/src/features/planner/components/StintsTable.jsx
+new file mode 100644
+index 0000000..55b7499
+--- /dev/null
++++ b/frontend/src/features/planner/components/StintsTable.jsx
+@@ -0,0 +1,28 @@
++import Card from '../../../shared/ui/Card'
++
++export default function StintsTable({ stints }) {
++  return (
++    <Card className="planner-panel planner-stints">
++      <span className="eyebrow">Stints table</span>
++      <h2>Planned rotation</h2>
++      <div className="planner-stints__table" role="table" aria-label="Planned stints">
++        <div className="planner-stints__row planner-stints__row--head" role="row">
++          <span>Stint</span>
++          <span>Driver</span>
++          <span>Window</span>
++          <span>Fuel</span>
++          <span>Tyres</span>
++        </div>
++        {stints.map((stint) => (
++          <div className="planner-stints__row" key={stint.stint} role="row">
++            <strong>{stint.stint}</strong>
++            <span>{stint.driver}</span>
++            <span>{stint.window}</span>
++            <span>{stint.fuelTarget}</span>
++            <span>{stint.tyres}</span>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/planner/components/WarningsPanel.jsx b/frontend/src/features/planner/components/WarningsPanel.jsx
+new file mode 100644
+index 0000000..b23273d
+--- /dev/null
++++ b/frontend/src/features/planner/components/WarningsPanel.jsx
+@@ -0,0 +1,22 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function WarningsPanel({ warnings }) {
++  return (
++    <Card className="planner-panel">
++      <span className="eyebrow">Warnings panel</span>
++      <h2>Plan risks</h2>
++      <div className="planner-list">
++        {warnings.map((warning) => (
++          <div className="planner-warning" key={warning.id}>
++            <div>
++              <strong>{warning.title}</strong>
++              <p>{warning.description}</p>
++            </div>
++            <Badge tone={warning.tone}>{warning.severity}</Badge>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/planner/screens/PlannerPage.jsx b/frontend/src/features/planner/screens/PlannerPage.jsx
+new file mode 100644
+index 0000000..9fcb7ec
+--- /dev/null
++++ b/frontend/src/features/planner/screens/PlannerPage.jsx
+@@ -0,0 +1,28 @@
++import CarsStatus from '../components/CarsStatus'
++import DriversStatus from '../components/DriversStatus'
++import PlannerSummary from '../components/PlannerSummary'
++import PlannerTimeline from '../components/PlannerTimeline'
++import SessionOverview from '../components/SessionOverview'
++import StintsTable from '../components/StintsTable'
++import WarningsPanel from '../components/WarningsPanel'
++import { getPlanner } from '../services/plannerService'
++
++export default function PlannerPage() {
++  const planner = getPlanner()
++
++  return (
++    <main className="content-page planner-page">
++      <SessionOverview session={planner.session} />
++      <PlannerSummary summary={planner.summary} />
++
++      <section className="planner-layout">
++        <DriversStatus drivers={planner.drivers} />
++        <CarsStatus cars={planner.cars} />
++      </section>
++
++      <PlannerTimeline timeline={planner.timeline} />
++      <StintsTable stints={planner.stints} />
++      <WarningsPanel warnings={planner.warnings} />
++    </main>
++  )
++}
+diff --git a/frontend/src/features/planner/services/plannerService.js b/frontend/src/features/planner/services/plannerService.js
+new file mode 100644
+index 0000000..da5659f
+--- /dev/null
++++ b/frontend/src/features/planner/services/plannerService.js
+@@ -0,0 +1,87 @@
++const plannerState = {
++  session: {
++    event: 'Spa 24h',
++    track: 'Spa-Francorchamps',
++    carClass: 'GT3',
++    raceLength: '24h',
++    startTime: 'Saturday · 16:30 CEST',
++    phase: 'Race plan draft',
++    readiness: 68,
++  },
++  drivers: [
++    { id: 'joao', name: 'Joao', status: 'ready', currentBlock: 'Opening rotation', nextStint: 'Stint 01', restWindow: '4h 20m' },
++    { id: 'pedro', name: 'Pedro', status: 'ready', currentBlock: 'Night specialist', nextStint: 'Stint 04', restWindow: '7h 10m' },
++    { id: 'lucas', name: 'Lucas', status: 'watch', currentBlock: 'Start/finish reserve', nextStint: 'Stint 03', restWindow: '5h 45m' },
++    { id: 'rafael', name: 'Rafael', status: 'ready', currentBlock: 'Tyre saver', nextStint: 'Stint 02', restWindow: '3h 55m' },
++  ],
++  cars: [
++    { id: 'primary', name: 'Ford Mustang GT3', status: 'ready', fuel: '120 L', tyres: '6 sets mapped', setup: 'Race baseline v3' },
++    { id: 'backup', name: 'BMW M4 GT3', status: 'standby', fuel: '120 L', tyres: 'Reference only', setup: 'Test day setup' },
++  ],
++  timeline: [
++    { time: '16:30', label: 'Green flag', type: 'start' },
++    { time: '18:05', label: 'First scheduled stop', type: 'pit' },
++    { time: '21:20', label: 'Sunset / night procedure', type: 'phase' },
++    { time: '02:10', label: 'Deep night double stint review', type: 'review' },
++    { time: '07:45', label: 'Morning tyre pressure sync', type: 'phase' },
++    { time: '16:30', label: 'Projected finish', type: 'finish' },
++  ],
++  stints: [
++    { stint: '01', driver: 'Joao', window: '16:30 - 18:05', fuelTarget: '96 L', tyres: 'Set A', notes: 'Start safe, avoid off-tracks' },
++    { stint: '02', driver: 'Rafael', window: '18:05 - 19:40', fuelTarget: '94 L', tyres: 'Set A', notes: 'Extend if traffic is clean' },
++    { stint: '03', driver: 'Lucas', window: '19:40 - 21:15', fuelTarget: '95 L', tyres: 'Set B', notes: 'Sunset visor check' },
++    { stint: '04', driver: 'Pedro', window: '21:15 - 22:50', fuelTarget: '96 L', tyres: 'Set B', notes: 'Night pace reference' },
++    { stint: '05', driver: 'Pedro', window: '22:50 - 00:25', fuelTarget: '94 L', tyres: 'Set B', notes: 'Optional double stint' },
++  ],
++  warnings: [
++    { id: 'fuel-window', severity: 'medium', title: 'Fuel model not locked', description: 'Consumption target still depends on final track temperature.' },
++    { id: 'night-rest', severity: 'low', title: 'Night rest gap tight', description: 'Pedro has the shortest recovery window after the double stint.' },
++    { id: 'backup-car', severity: 'low', title: 'Backup car is standby only', description: 'No active stint plan should reference the BMW backup.' },
++  ],
++}
++
++const statusMeta = {
++  ready: { label: 'Ready', tone: 'success' },
++  watch: { label: 'Watch', tone: 'warning' },
++  standby: { label: 'Standby', tone: 'neutral' },
++}
++
++const warningToneBySeverity = {
++  low: 'neutral',
++  medium: 'warning',
++  high: 'accent',
++}
++
++function decorateStatus(item) {
++  const status = statusMeta[item.status]
++
++  return {
++    ...item,
++    statusLabel: status.label,
++    statusTone: status.tone,
++  }
++}
++
++function getSummary(state) {
++  return {
++    totalStints: state.stints.length,
++    plannedHours: state.session.raceLength,
++    readyDrivers: state.drivers.filter((driver) => driver.status === 'ready').length,
++    warnings: state.warnings.length,
++  }
++}
++
++export function getPlanner() {
++  return {
++    session: plannerState.session,
++    drivers: plannerState.drivers.map(decorateStatus),
++    cars: plannerState.cars.map(decorateStatus),
++    timeline: plannerState.timeline,
++    stints: plannerState.stints,
++    warnings: plannerState.warnings.map((warning) => ({
++      ...warning,
++      tone: warningToneBySeverity[warning.severity],
++    })),
++    summary: getSummary(plannerState),
++  }
++}
+-- 
+2.43.0
+
