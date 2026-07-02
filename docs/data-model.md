@@ -382,3 +382,61 @@ For the first usable version, we only need:
 9. Stint
 
 Telemetry, fuel saving, AI and live state come later.
+
+---
+
+## Lineup
+
+Represents a group of drivers inside a team.
+
+A team can have many lineups. A race event should use one lineup, instead of using all team drivers.
+
+Fields:
+- id
+- team_id
+- name
+- category
+- notes
+- created_at
+
+Examples:
+- GT3 Pro Lineup
+- GT3 AM Lineup
+- Spa 24h Lineup
+- Daytona 24h Lineup
+
+Relations:
+- belongs to team
+- has many lineup drivers
+- can be assigned to race events
+
+---
+
+## LineupDriver
+
+Represents a driver inside a lineup.
+
+Fields:
+- id
+- lineup_id
+- driver_id
+- role
+- notes
+
+Roles:
+- main
+- reserve
+- manager
+- engineer
+- spotter
+
+---
+
+## RaceEvent update
+
+RaceEvent should reference a lineup.
+
+New field:
+- lineup_id
+
+This means an event does not automatically use every driver in the team. It uses the selected lineup for that event.
