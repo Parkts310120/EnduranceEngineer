@@ -1,0 +1,447 @@
+From 4e97db7bf9cabfc9dd76fbea05e752756743666e Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Thu, 2 Jul 2026 18:14:22 +0000
+Subject: [PATCH] Add Race Book workspace documents screen
+
+---
+ frontend/src/app/styles.css                   | 134 ++++++++++++++++
+ .../components/RaceBookDocumentCard.jsx       |  33 ++++
+ .../components/RaceBookImportantDocuments.jsx |  28 ++++
+ .../workspace/screens/DocumentsScreen.jsx     |  49 ++++--
+ .../workspace/services/raceBookService.js     | 143 ++++++++++++++++++
+ 5 files changed, 373 insertions(+), 14 deletions(-)
+ create mode 100644 frontend/src/features/workspace/components/RaceBookDocumentCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/RaceBookImportantDocuments.jsx
+ create mode 100644 frontend/src/features/workspace/services/raceBookService.js
+
+diff --git a/frontend/src/app/styles.css b/frontend/src/app/styles.css
+index b5984fa..2fc1bd2 100644
+--- a/frontend/src/app/styles.css
++++ b/frontend/src/app/styles.css
+@@ -575,3 +575,137 @@ a {
+     grid-template-columns: 1fr;
+   }
+ }
++
++.ui-button--secondary {
++  background: #242a3a;
++  border: 1px solid #343b50;
++  color: var(--text);
++}
++
++.race-book-screen {
++  max-width: 1440px;
++}
++
++.race-book-hero {
++  position: relative;
++  overflow: hidden;
++}
++
++.race-book-hero::after {
++  content: '';
++  position: absolute;
++  inset: auto -80px -120px auto;
++  width: 260px;
++  height: 260px;
++  background: rgba(124, 92, 255, 0.16);
++  border-radius: 999px;
++  filter: blur(8px);
++}
++
++.race-book-hero > * {
++  position: relative;
++  z-index: 1;
++}
++
++.race-book-stats,
++.race-book-card__header,
++.race-book-card__meta,
++.race-book-important__item {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 16px;
++}
++
++.race-book-stats {
++  flex-wrap: wrap;
++  justify-content: flex-end;
++  min-width: min(340px, 100%);
++}
++
++.race-book-layout {
++  display: grid;
++  grid-template-columns: 1.4fr 0.8fr;
++  gap: 18px;
++}
++
++.race-book-grid {
++  display: grid;
++  grid-template-columns: repeat(3, minmax(0, 1fr));
++  gap: 18px;
++}
++
++.race-book-card {
++  display: flex;
++  flex-direction: column;
++  gap: 18px;
++  min-height: 320px;
++}
++
++.race-book-card h3,
++.race-book-important h2,
++.race-book-missing-summary h2 {
++  margin: 8px 0 0;
++}
++
++.race-book-card__meta {
++  border-top: 1px solid var(--border);
++  color: var(--muted);
++  font-size: 13px;
++  margin-top: auto;
++  padding-top: 16px;
++}
++
++.race-book-empty-state {
++  background: rgba(255, 198, 88, 0.1);
++  border: 1px dashed rgba(255, 198, 88, 0.45);
++  border-radius: 14px;
++  color: #ffd98a;
++  display: grid;
++  gap: 6px;
++  padding: 14px;
++}
++
++.race-book-empty-state span,
++.race-book-important__item span {
++  color: var(--muted);
++  font-size: 13px;
++}
++
++.race-book-card--missing {
++  border-color: rgba(255, 198, 88, 0.35);
++}
++
++.race-book-important__list {
++  display: grid;
++  gap: 12px;
++  margin-top: 18px;
++}
++
++.race-book-important__item {
++  background: #11151f;
++  border: 1px solid #252a3a;
++  border-radius: 14px;
++  padding: 12px;
++}
++
++@media (max-width: 1180px) {
++  .race-book-grid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++}
++
++@media (max-width: 860px) {
++  .race-book-layout,
++  .race-book-grid {
++    grid-template-columns: 1fr;
++  }
++
++  .race-book-stats,
++  .race-book-card__header,
++  .race-book-card__meta,
++  .race-book-important__item {
++    align-items: stretch;
++    flex-direction: column;
++  }
++}
+diff --git a/frontend/src/features/workspace/components/RaceBookDocumentCard.jsx b/frontend/src/features/workspace/components/RaceBookDocumentCard.jsx
+new file mode 100644
+index 0000000..74a9c0a
+--- /dev/null
++++ b/frontend/src/features/workspace/components/RaceBookDocumentCard.jsx
+@@ -0,0 +1,33 @@
++import Badge from '../../../shared/ui/Badge'
++import Button from '../../../shared/ui/Button'
++import Card from '../../../shared/ui/Card'
++
++export default function RaceBookDocumentCard({ document }) {
++  return (
++    <Card className={`race-book-card ${document.isMissing ? 'race-book-card--missing' : ''}`}>
++      <div className="race-book-card__header">
++        <div>
++          <span className="eyebrow">{document.category}</span>
++          <h3>{document.title}</h3>
++        </div>
++        <Badge tone={document.statusTone}>{document.statusLabel}</Badge>
++      </div>
++
++      <p>{document.description}</p>
++
++      {document.isMissing ? (
++        <div className="race-book-empty-state">
++          <strong>Document not created yet</strong>
++          <span>Create this page before race mode so the team has a single source of truth.</span>
++        </div>
++      ) : null}
++
++      <div className="race-book-card__meta">
++        <span>Owner: {document.owner}</span>
++        <span>Updated: {document.updatedAt}</span>
++      </div>
++
++      <Button variant={document.isMissing ? 'primary' : 'secondary'}>{document.primaryAction}</Button>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/RaceBookImportantDocuments.jsx b/frontend/src/features/workspace/components/RaceBookImportantDocuments.jsx
+new file mode 100644
+index 0000000..25e7194
+--- /dev/null
++++ b/frontend/src/features/workspace/components/RaceBookImportantDocuments.jsx
+@@ -0,0 +1,28 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function RaceBookImportantDocuments({ documents }) {
++  return (
++    <Card className="race-book-important">
++      <div className="mission-card-heading">
++        <div>
++          <span className="eyebrow">Important documents</span>
++          <h2>Must-read before race mode</h2>
++        </div>
++        <Badge tone="accent">{documents.length} pinned</Badge>
++      </div>
++
++      <div className="race-book-important__list">
++        {documents.map((document) => (
++          <div className="race-book-important__item" key={document.id}>
++            <div>
++              <strong>{document.title}</strong>
++              <span>{document.owner}</span>
++            </div>
++            <Badge tone={document.statusTone}>{document.statusLabel}</Badge>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/screens/DocumentsScreen.jsx b/frontend/src/features/workspace/screens/DocumentsScreen.jsx
+index 5620dc3..bda84d5 100644
+--- a/frontend/src/features/workspace/screens/DocumentsScreen.jsx
++++ b/frontend/src/features/workspace/screens/DocumentsScreen.jsx
+@@ -1,24 +1,45 @@
+-import { documents } from '../../../domain/mockData'
+ import Badge from '../../../shared/ui/Badge'
+ import Card from '../../../shared/ui/Card'
++import RaceBookDocumentCard from '../components/RaceBookDocumentCard'
++import RaceBookImportantDocuments from '../components/RaceBookImportantDocuments'
++import { getRaceBook } from '../services/raceBookService'
+ 
+ export default function DocumentsScreen() {
++  const raceBook = getRaceBook()
++
+   return (
+-    <section className="screen-stack">
+-      <div className="section-heading">
+-        <span className="eyebrow">Knowledge base</span>
+-        <h2>Documents</h2>
+-        <p>Operational documents for briefing, procedures and reference.</p>
++    <section className="screen-stack race-book-screen">
++      <div className="workspace-hero race-book-hero">
++        <div>
++          <span className="eyebrow">Workspace documents</span>
++          <h2>{raceBook.title}</h2>
++          <p>{raceBook.description}</p>
++        </div>
++        <div className="race-book-stats" aria-label="Race book status summary">
++          <Badge tone="success">{raceBook.stats.ready} ready</Badge>
++          <Badge tone="accent">{raceBook.stats.inReview} in review</Badge>
++          <Badge tone="warning">{raceBook.stats.missing} missing</Badge>
++        </div>
+       </div>
+-      <div className="responsive-grid">
+-        {documents.map((document) => (
+-          <Card key={document.id}>
+-            <Badge>{document.status}</Badge>
+-            <h3>{document.title}</h3>
+-            <p>Owner: {document.owner}</p>
+-          </Card>
++
++      <section className="race-book-layout">
++        <RaceBookImportantDocuments documents={raceBook.importantDocuments} />
++        <Card className="race-book-missing-summary">
++          <span className="eyebrow">Empty states</span>
++          <h2>Missing documents</h2>
++          <p>
++            {raceBook.missingDocuments.length === 0
++              ? 'All required Race Book documents have at least a draft.'
++              : `${raceBook.missingDocuments.length} documents still need to be created before race mode.`}
++          </p>
++        </Card>
++      </section>
++
++      <section className="race-book-grid" aria-label="Race Book documents">
++        {raceBook.documents.map((document) => (
++          <RaceBookDocumentCard document={document} key={document.id} />
+         ))}
+-      </div>
++      </section>
+     </section>
+   )
+ }
+diff --git a/frontend/src/features/workspace/services/raceBookService.js b/frontend/src/features/workspace/services/raceBookService.js
+new file mode 100644
+index 0000000..4b5b59e
+--- /dev/null
++++ b/frontend/src/features/workspace/services/raceBookService.js
+@@ -0,0 +1,143 @@
++const raceBookDocuments = [
++  {
++    id: 'race-briefing',
++    title: 'Race Briefing',
++    category: 'Briefing',
++    status: 'ready',
++    owner: 'Team Manager',
++    updatedAt: 'Today · 09:30',
++    description: 'Weekend objectives, event format, driver expectations and communication cadence.',
++    primaryAction: 'Open briefing',
++    important: true,
++  },
++  {
++    id: 'server-discord',
++    title: 'Server & Discord',
++    category: 'Operations',
++    status: 'ready',
++    owner: 'Race Engineer',
++    updatedAt: 'Yesterday · 21:10',
++    description: 'Server name, password handoff, Discord channels and voice fallback plan.',
++    primaryAction: 'View access',
++    important: true,
++  },
++  {
++    id: 'setup-notes',
++    title: 'Setup Notes',
++    category: 'Car',
++    status: 'in_review',
++    owner: 'Lead Driver',
++    updatedAt: 'Today · 11:45',
++    description: 'Baseline setup notes, balance comments and known changes for race trim.',
++    primaryAction: 'Review notes',
++    important: true,
++  },
++  {
++    id: 'fuel-strategy',
++    title: 'Fuel Strategy',
++    category: 'Strategy',
++    status: 'draft',
++    owner: 'Strategist',
++    updatedAt: 'Today · 12:20',
++    description: 'Fuel window assumptions, stint length targets and contingency references.',
++    primaryAction: 'Continue draft',
++    important: true,
++  },
++  {
++    id: 'tyre-strategy',
++    title: 'Tyre Strategy',
++    category: 'Strategy',
++    status: 'draft',
++    owner: 'Race Engineer',
++    updatedAt: 'Yesterday · 18:40',
++    description: 'Tyre set allocation, double-stint guidance and pressure watch points.',
++    primaryAction: 'Edit strategy',
++  },
++  {
++    id: 'pit-rules',
++    title: 'Pit Rules',
++    category: 'Rules',
++    status: 'ready',
++    owner: 'Team Manager',
++    updatedAt: 'Monday · 16:00',
++    description: 'Pit entry, service order, driver swap procedure and penalty reminders.',
++    primaryAction: 'Read rules',
++  },
++  {
++    id: 'track-limits',
++    title: 'Track Limits',
++    category: 'Rules',
++    status: 'in_review',
++    owner: 'Spotter Lead',
++    updatedAt: 'Today · 10:05',
++    description: 'High-risk corners, warning policy and stint-by-stint monitoring plan.',
++    primaryAction: 'Review limits',
++  },
++  {
++    id: 'emergency-plan',
++    title: 'Emergency Plan',
++    category: 'Safety',
++    status: 'missing',
++    owner: 'Race Engineer',
++    updatedAt: 'Not created',
++    description: 'Incident escalation, disconnect procedure and emergency contact protocol.',
++    primaryAction: 'Create plan',
++    important: true,
++  },
++  {
++    id: 'checklist',
++    title: 'Checklist',
++    category: 'Operations',
++    status: 'ready',
++    owner: 'Team Manager',
++    updatedAt: 'Today · 08:55',
++    description: 'Pre-race readiness checklist for drivers, setup files, documents and comms.',
++    primaryAction: 'Open checklist',
++  },
++  {
++    id: 'incident-log',
++    title: 'Incident Log',
++    category: 'Race Control',
++    status: 'missing',
++    owner: 'Analyst',
++    updatedAt: 'Not created',
++    description: 'Shared log for contacts, penalties, protests and post-race follow-up.',
++    primaryAction: 'Create log',
++  },
++]
++
++const statusMeta = {
++  draft: { label: 'Draft', tone: 'neutral' },
++  ready: { label: 'Ready', tone: 'success' },
++  missing: { label: 'Missing', tone: 'warning' },
++  in_review: { label: 'In review', tone: 'accent' },
++}
++
++function decorateDocument(document) {
++  return {
++    ...document,
++    statusLabel: statusMeta[document.status].label,
++    statusTone: statusMeta[document.status].tone,
++    isMissing: document.status === 'missing',
++  }
++}
++
++export function getRaceBook() {
++  const documents = raceBookDocuments.map(decorateDocument)
++  const importantDocuments = documents.filter((document) => document.important)
++  const missingDocuments = documents.filter((document) => document.isMissing)
++
++  return {
++    title: 'Race Book',
++    description: 'Centralized race documentation for briefing, rules, strategy and emergency procedures.',
++    documents,
++    importantDocuments,
++    missingDocuments,
++    stats: {
++      total: documents.length,
++      ready: documents.filter((document) => document.status === 'ready').length,
++      inReview: documents.filter((document) => document.status === 'in_review').length,
++      missing: missingDocuments.length,
++    },
++  }
++}
+-- 
+2.43.0
+
