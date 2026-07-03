@@ -31,3 +31,7 @@ The workspace overview renders Mission Control from mocked workspace services an
 ## Workspace Plans
 
 `/workspaces/:workspaceId/plans` renders the Planner Engine as a workspace module. The legacy `/planner` route remains available temporarily and reuses the same Planner screen.
+
+## Live Race Mode
+
+`/workspaces/:workspaceId/live` renders Live Race Mode as an operational workspace screen for endurance sessions. It uses mocked frontend data for the current driver, stint, pit window, fuel and tyre state, team readiness, alerts, timeline and next actions.

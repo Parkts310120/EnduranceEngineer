@@ -850,3 +850,171 @@ a {
     justify-items: start;
   }
 }
+
+.ui-badge--danger {
+  background: rgba(255, 92, 122, 0.12);
+  border-color: rgba(255, 92, 122, 0.34);
+  color: #ff9bae;
+}
+
+.live-race-screen {
+  max-width: 1440px;
+}
+
+.live-race-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.live-race-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -90px -130px auto;
+  width: 280px;
+  height: 280px;
+  background: rgba(69, 212, 131, 0.14);
+  border-radius: 999px;
+  filter: blur(10px);
+}
+
+.live-race-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.live-race-hero__status {
+  align-items: flex-end;
+  color: var(--muted);
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+  min-width: min(280px, 100%);
+}
+
+.live-race-focus-grid,
+.live-race-status-grid,
+.live-race-command-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.live-race-focus-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.live-race-status-grid {
+  grid-template-columns: 1.1fr 0.9fr 1.4fr;
+}
+
+.live-race-command-grid {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+.live-race-focus-card,
+.live-race-status-card,
+.live-race-alerts,
+.live-race-actions,
+.live-race-timeline {
+  display: grid;
+  gap: 16px;
+}
+
+.live-race-focus-card__header,
+.live-race-status-card__header,
+.live-race-team-member,
+.live-race-alert,
+.live-race-action {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.live-race-focus-card h3,
+.live-race-status-card h3,
+.live-race-alerts h2,
+.live-race-actions h2,
+.live-race-timeline h2 {
+  margin: 0;
+}
+
+.live-race-team-list,
+.live-race-alert-list,
+.live-race-action-list,
+.live-race-timeline__items {
+  display: grid;
+  gap: 12px;
+}
+
+.live-race-team-member,
+.live-race-alert,
+.live-race-action,
+.live-race-timeline__item {
+  background: #11151f;
+  border: 1px solid #252a3a;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.live-race-team-member div,
+.live-race-action div {
+  display: grid;
+  gap: 4px;
+}
+
+.live-race-team-member span,
+.live-race-action span,
+.live-race-timeline__item p,
+.live-race-alert p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.live-race-alert--warning {
+  border-color: rgba(255, 198, 88, 0.38);
+}
+
+.live-race-alert--critical {
+  border-color: rgba(255, 92, 122, 0.42);
+}
+
+.live-race-timeline__item {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 90px minmax(0, 1fr);
+}
+
+.live-race-timeline__item time {
+  color: #cfc5ff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 1180px) {
+  .live-race-focus-grid,
+  .live-race-status-grid,
+  .live-race-command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .live-race-focus-grid,
+  .live-race-status-grid,
+  .live-race-command-grid,
+  .live-race-timeline__item {
+    grid-template-columns: 1fr;
+  }
+
+  .live-race-hero__status,
+  .live-race-focus-card__header,
+  .live-race-status-card__header,
+  .live-race-team-member,
+  .live-race-alert,
+  .live-race-action {
+    align-items: stretch;
+    flex-direction: column;
+    justify-items: start;
+  }
+}
