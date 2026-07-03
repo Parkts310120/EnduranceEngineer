@@ -1,0 +1,1215 @@
+From a2dceaed7981f08a3a2cc827f3dd555d65caf4ec Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Fri, 3 Jul 2026 17:08:02 +0000
+Subject: [PATCH 1/2] Add Live Race Mode workspace screen
+
+---
+ frontend/README.md                            |   4 +
+ frontend/src/app/router/AppRouter.jsx         |   1 +
+ frontend/src/app/styles.css                   | 168 ++++++++++++++++++
+ frontend/src/domain/constants.js              |   1 +
+ .../workspace/WorkspaceScreenRouter.jsx       |   2 +
+ .../workspace/components/LiveRaceAlerts.jsx   |  22 +++
+ .../components/LiveRaceFocusGrid.jsx          |  26 +++
+ .../workspace/components/LiveRaceHero.jsx     |  17 ++
+ .../components/LiveRaceNextActions.jsx        |  22 +++
+ .../components/LiveRaceStatusPanel.jsx        |  45 +++++
+ .../workspace/components/LiveRaceTimeline.jsx |  21 +++
+ .../workspace/screens/LiveRaceScreen.jsx      |  29 +++
+ .../workspace/services/liveRaceService.js     | 128 +++++++++++++
+ 13 files changed, 486 insertions(+)
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceAlerts.jsx
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceFocusGrid.jsx
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceHero.jsx
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceNextActions.jsx
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceStatusPanel.jsx
+ create mode 100644 frontend/src/features/workspace/components/LiveRaceTimeline.jsx
+ create mode 100644 frontend/src/features/workspace/screens/LiveRaceScreen.jsx
+ create mode 100644 frontend/src/features/workspace/services/liveRaceService.js
+
+diff --git a/frontend/README.md b/frontend/README.md
+index f8e6e9f..b96e31d 100644
+--- a/frontend/README.md
++++ b/frontend/README.md
+@@ -31,3 +31,7 @@ The workspace overview renders Mission Control from mocked workspace services an
+ ## Workspace Plans
+ 
+ `/workspaces/:workspaceId/plans` renders the Planner Engine as a workspace module. The legacy `/planner` route remains available temporarily and reuses the same Planner screen.
++
++## Live Race Mode
++
++`/workspaces/:workspaceId/live` renders Live Race Mode as an operational workspace screen for endurance sessions. It uses mocked frontend data for the current driver, stint, pit window, fuel and tyre state, team readiness, alerts, timeline and next actions.
+diff --git a/frontend/src/app/router/AppRouter.jsx b/frontend/src/app/router/AppRouter.jsx
+index 519a8af..84d8fd8 100644
+--- a/frontend/src/app/router/AppRouter.jsx
++++ b/frontend/src/app/router/AppRouter.jsx
+@@ -25,6 +25,7 @@ export default function AppRouter() {
+           <Route path="members" element={<WorkspaceScreenRouter screen="members" />} />
+           <Route path="documents" element={<WorkspaceScreenRouter screen="documents" />} />
+           <Route path="plans" element={<WorkspaceScreenRouter screen="plans" />} />
++          <Route path="live" element={<WorkspaceScreenRouter screen="live" />} />
+           <Route path="files" element={<WorkspaceScreenRouter screen="files" />} />
+           <Route path="reports" element={<WorkspaceScreenRouter screen="reports" />} />
+           <Route path="settings" element={<WorkspaceScreenRouter screen="settings" />} />
+diff --git a/frontend/src/app/styles.css b/frontend/src/app/styles.css
+index 9c776e9..8f7e73d 100644
+--- a/frontend/src/app/styles.css
++++ b/frontend/src/app/styles.css
+@@ -850,3 +850,171 @@ a {
+     justify-items: start;
+   }
+ }
++
++.ui-badge--danger {
++  background: rgba(255, 92, 122, 0.12);
++  border-color: rgba(255, 92, 122, 0.34);
++  color: #ff9bae;
++}
++
++.live-race-screen {
++  max-width: 1440px;
++}
++
++.live-race-hero {
++  position: relative;
++  overflow: hidden;
++}
++
++.live-race-hero::after {
++  content: '';
++  position: absolute;
++  inset: auto -90px -130px auto;
++  width: 280px;
++  height: 280px;
++  background: rgba(69, 212, 131, 0.14);
++  border-radius: 999px;
++  filter: blur(10px);
++}
++
++.live-race-hero > * {
++  position: relative;
++  z-index: 1;
++}
++
++.live-race-hero__status {
++  align-items: flex-end;
++  color: var(--muted);
++  display: grid;
++  gap: 12px;
++  justify-items: end;
++  min-width: min(280px, 100%);
++}
++
++.live-race-focus-grid,
++.live-race-status-grid,
++.live-race-command-grid {
++  display: grid;
++  gap: 18px;
++}
++
++.live-race-focus-grid {
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++}
++
++.live-race-status-grid {
++  grid-template-columns: 1.1fr 0.9fr 1.4fr;
++}
++
++.live-race-command-grid {
++  grid-template-columns: 1.2fr 0.8fr;
++}
++
++.live-race-focus-card,
++.live-race-status-card,
++.live-race-alerts,
++.live-race-actions,
++.live-race-timeline {
++  display: grid;
++  gap: 16px;
++}
++
++.live-race-focus-card__header,
++.live-race-status-card__header,
++.live-race-team-member,
++.live-race-alert,
++.live-race-action {
++  align-items: center;
++  display: flex;
++  gap: 16px;
++  justify-content: space-between;
++}
++
++.live-race-focus-card h3,
++.live-race-status-card h3,
++.live-race-alerts h2,
++.live-race-actions h2,
++.live-race-timeline h2 {
++  margin: 0;
++}
++
++.live-race-team-list,
++.live-race-alert-list,
++.live-race-action-list,
++.live-race-timeline__items {
++  display: grid;
++  gap: 12px;
++}
++
++.live-race-team-member,
++.live-race-alert,
++.live-race-action,
++.live-race-timeline__item {
++  background: #11151f;
++  border: 1px solid #252a3a;
++  border-radius: 14px;
++  padding: 12px;
++}
++
++.live-race-team-member div,
++.live-race-action div {
++  display: grid;
++  gap: 4px;
++}
++
++.live-race-team-member span,
++.live-race-action span,
++.live-race-timeline__item p,
++.live-race-alert p {
++  color: var(--muted);
++  margin: 0;
++}
++
++.live-race-alert--warning {
++  border-color: rgba(255, 198, 88, 0.38);
++}
++
++.live-race-alert--critical {
++  border-color: rgba(255, 92, 122, 0.42);
++}
++
++.live-race-timeline__item {
++  align-items: start;
++  display: grid;
++  gap: 14px;
++  grid-template-columns: 90px minmax(0, 1fr);
++}
++
++.live-race-timeline__item time {
++  color: #cfc5ff;
++  font-size: 13px;
++  font-weight: 800;
++}
++
++@media (max-width: 1180px) {
++  .live-race-focus-grid,
++  .live-race-status-grid,
++  .live-race-command-grid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++}
++
++@media (max-width: 760px) {
++  .live-race-focus-grid,
++  .live-race-status-grid,
++  .live-race-command-grid,
++  .live-race-timeline__item {
++    grid-template-columns: 1fr;
++  }
++
++  .live-race-hero__status,
++  .live-race-focus-card__header,
++  .live-race-status-card__header,
++  .live-race-team-member,
++  .live-race-alert,
++  .live-race-action {
++    align-items: stretch;
++    flex-direction: column;
++    justify-items: start;
++  }
++}
+diff --git a/frontend/src/domain/constants.js b/frontend/src/domain/constants.js
+index f91cc84..970c6c3 100644
+--- a/frontend/src/domain/constants.js
++++ b/frontend/src/domain/constants.js
+@@ -27,6 +27,7 @@ export const WORKSPACE_NAVIGATION = [
+   { label: 'Members', path: 'members' },
+   { label: 'Documents', path: 'documents' },
+   { label: 'Plans', path: 'plans' },
++  { label: 'Live Race', path: 'live' },
+   { label: 'Files', path: 'files' },
+   { label: 'Reports', path: 'reports' },
+   { label: 'Settings', path: 'settings' },
+diff --git a/frontend/src/features/workspace/WorkspaceScreenRouter.jsx b/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
+index 175e3d7..f472f4c 100644
+--- a/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
++++ b/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
+@@ -3,6 +3,7 @@ import OverviewScreen from './screens/OverviewScreen'
+ import MembersScreen from './screens/MembersScreen'
+ import DocumentsScreen from './screens/DocumentsScreen'
+ import PlansScreen from './screens/PlansScreen'
++import LiveRaceScreen from './screens/LiveRaceScreen'
+ import FilesScreen from './screens/FilesScreen'
+ import ReportsScreen from './screens/ReportsScreen'
+ import SettingsScreen from './screens/SettingsScreen'
+@@ -12,6 +13,7 @@ const screens = {
+   members: MembersScreen,
+   documents: DocumentsScreen,
+   plans: PlansScreen,
++  live: LiveRaceScreen,
+   files: FilesScreen,
+   reports: ReportsScreen,
+   settings: SettingsScreen,
+diff --git a/frontend/src/features/workspace/components/LiveRaceAlerts.jsx b/frontend/src/features/workspace/components/LiveRaceAlerts.jsx
+new file mode 100644
+index 0000000..22aabb0
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceAlerts.jsx
+@@ -0,0 +1,22 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function LiveRaceAlerts({ alerts }) {
++  return (
++    <Card className="live-race-alerts">
++      <span className="eyebrow">Live alerts</span>
++      <h2>Race control board</h2>
++      <div className="live-race-alert-list">
++        {alerts.map((alert) => (
++          <article className={`live-race-alert live-race-alert--${alert.severity}`} key={alert.id}>
++            <div>
++              <strong>{alert.title}</strong>
++              <p>{alert.message}</p>
++            </div>
++            <Badge tone={alert.tone}>{alert.severity}</Badge>
++          </article>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/LiveRaceFocusGrid.jsx b/frontend/src/features/workspace/components/LiveRaceFocusGrid.jsx
+new file mode 100644
+index 0000000..9b805ef
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceFocusGrid.jsx
+@@ -0,0 +1,26 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function LiveRaceFocusGrid({ currentDriver, currentStint, nextDriver, pitWindow }) {
++  const cards = [
++    { eyebrow: 'Current driver', title: currentDriver.name, body: currentDriver.car, meta: currentDriver.position, tone: 'success' },
++    { eyebrow: 'Current stint', title: currentStint.number, body: currentStint.time, meta: `Target end ${currentStint.targetEnd}`, tone: 'accent' },
++    { eyebrow: 'Next driver', title: nextDriver.name, body: nextDriver.readiness, meta: 'Ready for handover', tone: 'success' },
++    { eyebrow: 'Next pit window', title: pitWindow.opensIn, body: pitWindow.range, meta: 'Prepare crew call', tone: 'warning' },
++  ]
++
++  return (
++    <section className="live-race-focus-grid" aria-label="Live race focus cards">
++      {cards.map((card) => (
++        <Card className="live-race-focus-card" key={card.eyebrow}>
++          <div className="live-race-focus-card__header">
++            <span className="eyebrow">{card.eyebrow}</span>
++            <Badge tone={card.tone}>{card.meta}</Badge>
++          </div>
++          <h3>{card.title}</h3>
++          <p>{card.body}</p>
++        </Card>
++      ))}
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/LiveRaceHero.jsx b/frontend/src/features/workspace/components/LiveRaceHero.jsx
+new file mode 100644
+index 0000000..0234bbd
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceHero.jsx
+@@ -0,0 +1,17 @@
++import Badge from '../../../shared/ui/Badge'
++
++export default function LiveRaceHero({ hero }) {
++  return (
++    <section className="workspace-hero live-race-hero">
++      <div>
++        <span className="eyebrow">Workspace live</span>
++        <h2>{hero.title}</h2>
++        <p>{hero.description}</p>
++      </div>
++      <div className="live-race-hero__status">
++        <Badge tone="success">{hero.status}</Badge>
++        <span>{hero.phase}</span>
++      </div>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/LiveRaceNextActions.jsx b/frontend/src/features/workspace/components/LiveRaceNextActions.jsx
+new file mode 100644
+index 0000000..e16f154
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceNextActions.jsx
+@@ -0,0 +1,22 @@
++import Button from '../../../shared/ui/Button'
++import Card from '../../../shared/ui/Card'
++
++export default function LiveRaceNextActions({ actions }) {
++  return (
++    <Card className="live-race-actions">
++      <span className="eyebrow">Next actions</span>
++      <h2>Operational queue</h2>
++      <div className="live-race-action-list">
++        {actions.map((action) => (
++          <article className="live-race-action" key={action.id}>
++            <div>
++              <strong>{action.label}</strong>
++              <span>{action.owner}</span>
++            </div>
++            <Button variant="secondary">Acknowledge</Button>
++          </article>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/LiveRaceStatusPanel.jsx b/frontend/src/features/workspace/components/LiveRaceStatusPanel.jsx
+new file mode 100644
+index 0000000..0b5b952
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceStatusPanel.jsx
+@@ -0,0 +1,45 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++import Progress from '../../../shared/ui/Progress'
++
++export default function LiveRaceStatusPanel({ fuel, tyres, team }) {
++  return (
++    <section className="live-race-status-grid" aria-label="Live operational status">
++      <Card className="live-race-status-card">
++        <div className="live-race-status-card__header">
++          <span className="eyebrow">Fuel status</span>
++          <Badge tone={fuel.tone}>{fuel.status}</Badge>
++        </div>
++        <Progress label={fuel.label} value={fuel.level} />
++        <p>Target stint length: {fuel.targetLaps} laps.</p>
++      </Card>
++
++      <Card className="live-race-status-card">
++        <div className="live-race-status-card__header">
++          <span className="eyebrow">Tyre status</span>
++          <Badge tone="accent">{tyres.status}</Badge>
++        </div>
++        <h3>{tyres.compound}</h3>
++        <p>{tyres.age} on set • {tyres.wear}</p>
++      </Card>
++
++      <Card className="live-race-status-card">
++        <div className="live-race-status-card__header">
++          <span className="eyebrow">Team status</span>
++          <Badge tone="success">{team.readiness}</Badge>
++        </div>
++        <div className="live-race-team-list">
++          {team.members.map((member) => (
++            <div className="live-race-team-member" key={`${member.role}-${member.name}`}>
++              <div>
++                <strong>{member.name}</strong>
++                <span>{member.role}</span>
++              </div>
++              <Badge tone={member.tone}>{member.status}</Badge>
++            </div>
++          ))}
++        </div>
++      </Card>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/LiveRaceTimeline.jsx b/frontend/src/features/workspace/components/LiveRaceTimeline.jsx
+new file mode 100644
+index 0000000..15b0518
+--- /dev/null
++++ b/frontend/src/features/workspace/components/LiveRaceTimeline.jsx
+@@ -0,0 +1,21 @@
++import Card from '../../../shared/ui/Card'
++
++export default function LiveRaceTimeline({ timeline }) {
++  return (
++    <Card className="live-race-timeline">
++      <span className="eyebrow">Race timeline</span>
++      <h2>Latest events</h2>
++      <div className="live-race-timeline__items">
++        {timeline.map((item) => (
++          <div className="live-race-timeline__item" key={`${item.time}-${item.label}`}>
++            <time>{item.time}</time>
++            <div>
++              <strong>{item.label}</strong>
++              <p>{item.detail}</p>
++            </div>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/screens/LiveRaceScreen.jsx b/frontend/src/features/workspace/screens/LiveRaceScreen.jsx
+new file mode 100644
+index 0000000..ef0898e
+--- /dev/null
++++ b/frontend/src/features/workspace/screens/LiveRaceScreen.jsx
+@@ -0,0 +1,29 @@
++import LiveRaceAlerts from '../components/LiveRaceAlerts'
++import LiveRaceFocusGrid from '../components/LiveRaceFocusGrid'
++import LiveRaceHero from '../components/LiveRaceHero'
++import LiveRaceNextActions from '../components/LiveRaceNextActions'
++import LiveRaceStatusPanel from '../components/LiveRaceStatusPanel'
++import LiveRaceTimeline from '../components/LiveRaceTimeline'
++import { getLiveRaceMode } from '../services/liveRaceService'
++
++export default function LiveRaceScreen() {
++  const liveRace = getLiveRaceMode()
++
++  return (
++    <section className="screen-stack live-race-screen">
++      <LiveRaceHero hero={liveRace.hero} />
++      <LiveRaceFocusGrid
++        currentDriver={liveRace.currentDriver}
++        currentStint={liveRace.currentStint}
++        nextDriver={liveRace.nextDriver}
++        pitWindow={liveRace.pitWindow}
++      />
++      <LiveRaceStatusPanel fuel={liveRace.fuel} tyres={liveRace.tyres} team={liveRace.team} />
++      <section className="live-race-command-grid">
++        <LiveRaceAlerts alerts={liveRace.alerts} />
++        <LiveRaceNextActions actions={liveRace.actions} />
++      </section>
++      <LiveRaceTimeline timeline={liveRace.timeline} />
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/services/liveRaceService.js b/frontend/src/features/workspace/services/liveRaceService.js
+new file mode 100644
+index 0000000..9d14634
+--- /dev/null
++++ b/frontend/src/features/workspace/services/liveRaceService.js
+@@ -0,0 +1,128 @@
++const liveRaceState = {
++  race: {
++    name: 'Barcelona 6H — Live Desk',
++    phase: 'Hour 2 of 6',
++    elapsed: '01:42:18',
++    remaining: '04:17:42',
++    position: 'P4 overall / P2 class',
++    trackStatus: 'Green flag',
++  },
++  stint: {
++    driver: 'Marina Costa',
++    car: '#27 BMW M4 GT3',
++    stintNumber: 3,
++    stintTime: '34:12',
++    targetEnd: 'Lap 58',
++    nextDriver: 'Rafael Lima',
++    pitWindowOpensIn: '11 min',
++    pitWindowRange: 'Lap 54–58',
++  },
++  fuel: {
++    level: 42,
++    lapsRemaining: 14,
++    targetLaps: 12,
++    status: 'On target',
++  },
++  tyres: {
++    compound: 'Medium',
++    age: '22 laps',
++    wear: 'Front left watch',
++    status: 'Managed',
++  },
++  team: [
++    { role: 'Race engineer', name: 'Camila Rocha', status: 'Online', tone: 'success' },
++    { role: 'Strategist', name: 'Nico Alvarez', status: 'Reviewing pit window', tone: 'accent' },
++    { role: 'Spotter', name: 'João Mendes', status: 'Online', tone: 'success' },
++    { role: 'Team manager', name: 'Ana Freitas', status: 'Standby', tone: 'neutral' },
++  ],
++  alerts: [
++    {
++      id: 'alert-fuel-margin',
++      severity: 'warning',
++      title: 'Fuel margin narrowing',
++      message: 'Keep lift-and-coast target for two laps before committing to lap 56 stop.',
++    },
++    {
++      id: 'alert-track-limits',
++      severity: 'info',
++      title: 'Track limits clean',
++      message: 'No new warnings in the last 18 laps. Maintain current line at T9 exit.',
++    },
++  ],
++  timeline: [
++    { time: '01:08:02', label: 'Pit stop completed', detail: 'Fuel + tyres, Marina in the car' },
++    { time: '01:21:44', label: 'Safety margin restored', detail: 'Gap to P3 stabilized at 8.2s' },
++    { time: '01:36:10', label: 'Traffic call', detail: 'GT4 pack cleared through sector 2' },
++    { time: '01:42:18', label: 'Current state', detail: 'Green flag, monitoring fuel delta' },
++  ],
++  actions: [
++    { id: 'confirm-driver', label: 'Confirm Rafael is ready in pit lane', owner: 'Team manager' },
++    { id: 'fuel-call', label: 'Call fuel number at lap 52', owner: 'Strategist' },
++    { id: 'tyre-check', label: 'Prepare medium tyre set B', owner: 'Race engineer' },
++  ],
++}
++
++const severityTone = {
++  warning: 'warning',
++  info: 'accent',
++  critical: 'danger',
++}
++
++function getReadiness(team) {
++  const online = team.filter((member) => member.status.toLowerCase().includes('online')).length
++  return `${online}/${team.length} online`
++}
++
++function getFuelTone(fuel) {
++  if (fuel.lapsRemaining < fuel.targetLaps) return 'danger'
++  if (fuel.lapsRemaining <= fuel.targetLaps + 2) return 'warning'
++  return 'success'
++}
++
++export function getLiveRaceMode() {
++  const { race, stint, fuel, tyres, team, alerts, timeline, actions } = liveRaceState
++
++  return {
++    hero: {
++      title: 'Live Race Mode',
++      description: `${race.name} is currently ${race.trackStatus.toLowerCase()} with ${race.remaining} remaining.`,
++      status: race.trackStatus,
++      phase: race.phase,
++    },
++    currentDriver: {
++      name: stint.driver,
++      car: stint.car,
++      position: race.position,
++      elapsed: race.elapsed,
++    },
++    currentStint: {
++      number: `Stint ${stint.stintNumber}`,
++      time: stint.stintTime,
++      targetEnd: stint.targetEnd,
++    },
++    nextDriver: {
++      name: stint.nextDriver,
++      readiness: 'Helmet on • fuel board reviewed',
++    },
++    pitWindow: {
++      opensIn: stint.pitWindowOpensIn,
++      range: stint.pitWindowRange,
++    },
++    fuel: {
++      ...fuel,
++      tone: getFuelTone(fuel),
++      label: `${fuel.level}% fuel • ${fuel.lapsRemaining} laps remaining`,
++    },
++    tyres,
++    team: {
++      readiness: getReadiness(team),
++      members: team,
++    },
++    alerts: alerts.map((alert) => ({
++      ...alert,
++      tone: severityTone[alert.severity] ?? 'neutral',
++    })),
++    timeline,
++    actions,
++  }
++}
+-- 
+2.43.0
+
+
+From ae726c449603ce92c84074d0595acae2d9be3eff Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Fri, 3 Jul 2026 17:22:00 +0000
+Subject: [PATCH 2/2] Add Garage Module MVP
+
+---
+ frontend/src/app/router/AppRouter.jsx         |   1 +
+ frontend/src/app/styles.css                   | 150 ++++++++++++++++++
+ frontend/src/domain/constants.js              |   1 +
+ .../workspace/WorkspaceScreenRouter.jsx       |   2 +
+ .../workspace/components/GarageAlerts.jsx     |  27 ++++
+ .../workspace/components/GarageCarCard.jsx    |  33 ++++
+ .../workspace/components/GarageHero.jsx       |  14 ++
+ .../components/GarageMaintenanceList.jsx      |  22 +++
+ .../components/GarageStatusPanel.jsx          |  19 +++
+ .../components/GarageSummaryCards.jsx         |  23 +++
+ .../features/workspace/screens/CarsScreen.jsx |  32 ++++
+ .../workspace/services/garageService.js       | 141 ++++++++++++++++
+ 12 files changed, 465 insertions(+)
+ create mode 100644 frontend/src/features/workspace/components/GarageAlerts.jsx
+ create mode 100644 frontend/src/features/workspace/components/GarageCarCard.jsx
+ create mode 100644 frontend/src/features/workspace/components/GarageHero.jsx
+ create mode 100644 frontend/src/features/workspace/components/GarageMaintenanceList.jsx
+ create mode 100644 frontend/src/features/workspace/components/GarageStatusPanel.jsx
+ create mode 100644 frontend/src/features/workspace/components/GarageSummaryCards.jsx
+ create mode 100644 frontend/src/features/workspace/screens/CarsScreen.jsx
+ create mode 100644 frontend/src/features/workspace/services/garageService.js
+
+diff --git a/frontend/src/app/router/AppRouter.jsx b/frontend/src/app/router/AppRouter.jsx
+index 84d8fd8..7afd573 100644
+--- a/frontend/src/app/router/AppRouter.jsx
++++ b/frontend/src/app/router/AppRouter.jsx
+@@ -26,6 +26,7 @@ export default function AppRouter() {
+           <Route path="documents" element={<WorkspaceScreenRouter screen="documents" />} />
+           <Route path="plans" element={<WorkspaceScreenRouter screen="plans" />} />
+           <Route path="live" element={<WorkspaceScreenRouter screen="live" />} />
++          <Route path="cars" element={<WorkspaceScreenRouter screen="cars" />} />
+           <Route path="files" element={<WorkspaceScreenRouter screen="files" />} />
+           <Route path="reports" element={<WorkspaceScreenRouter screen="reports" />} />
+           <Route path="settings" element={<WorkspaceScreenRouter screen="settings" />} />
+diff --git a/frontend/src/app/styles.css b/frontend/src/app/styles.css
+index 8f7e73d..2cb228a 100644
+--- a/frontend/src/app/styles.css
++++ b/frontend/src/app/styles.css
+@@ -1018,3 +1018,153 @@ a {
+     justify-items: start;
+   }
+ }
++
++.garage-screen {
++  max-width: 1440px;
++}
++
++.garage-hero {
++  position: relative;
++  overflow: hidden;
++}
++
++.garage-hero::after {
++  content: '';
++  position: absolute;
++  inset: auto -80px -120px auto;
++  width: 260px;
++  height: 260px;
++  background: rgba(124, 92, 255, 0.14);
++  border-radius: 999px;
++  filter: blur(10px);
++}
++
++.garage-hero > * {
++  position: relative;
++  z-index: 1;
++}
++
++.garage-summary-grid,
++.garage-layout,
++.garage-car-grid,
++.garage-side-panel {
++  display: grid;
++  gap: 18px;
++}
++
++.garage-summary-grid {
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++}
++
++.garage-summary-card {
++  display: grid;
++  gap: 10px;
++}
++
++.garage-summary-card strong {
++  font-size: 34px;
++}
++
++.garage-layout {
++  align-items: start;
++  grid-template-columns: minmax(0, 1fr) 380px;
++}
++
++.garage-car-grid {
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++}
++
++.garage-car-card,
++.garage-status-panel,
++.garage-maintenance-list,
++.garage-alerts {
++  display: grid;
++  gap: 16px;
++}
++
++.garage-car-card__header,
++.garage-status-row,
++.garage-maintenance-item,
++.garage-alert {
++  align-items: center;
++  display: flex;
++  gap: 16px;
++  justify-content: space-between;
++}
++
++.garage-car-card h3,
++.garage-status-panel h2,
++.garage-maintenance-list h2,
++.garage-alerts h2 {
++  margin: 0;
++}
++
++.garage-car-card__metrics,
++.garage-car-card__meta,
++.garage-status-list,
++.garage-maintenance-items,
++.garage-alert-list {
++  display: grid;
++  gap: 12px;
++}
++
++.garage-car-card__meta {
++  border-top: 1px solid var(--border);
++  color: var(--muted);
++  font-size: 13px;
++  padding-top: 16px;
++}
++
++.garage-status-row,
++.garage-maintenance-item,
++.garage-alert {
++  background: #11151f;
++  border: 1px solid #252a3a;
++  border-radius: 14px;
++  padding: 12px;
++}
++
++.garage-maintenance-item div,
++.garage-alert div {
++  display: grid;
++  gap: 4px;
++}
++
++.garage-maintenance-item p,
++.garage-alert p,
++.garage-alert span {
++  color: var(--muted);
++  margin: 0;
++}
++
++@media (max-width: 1180px) {
++  .garage-summary-grid,
++  .garage-layout,
++  .garage-car-grid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++
++  .garage-side-panel {
++    grid-column: 1 / -1;
++  }
++}
++
++@media (max-width: 760px) {
++  .garage-summary-grid,
++  .garage-layout,
++  .garage-car-grid,
++  .garage-car-card__header,
++  .garage-status-row,
++  .garage-maintenance-item,
++  .garage-alert {
++    grid-template-columns: 1fr;
++  }
++
++  .garage-car-card__header,
++  .garage-status-row,
++  .garage-maintenance-item,
++  .garage-alert {
++    align-items: stretch;
++    flex-direction: column;
++  }
++}
+diff --git a/frontend/src/domain/constants.js b/frontend/src/domain/constants.js
+index 970c6c3..2d4dd52 100644
+--- a/frontend/src/domain/constants.js
++++ b/frontend/src/domain/constants.js
+@@ -28,6 +28,7 @@ export const WORKSPACE_NAVIGATION = [
+   { label: 'Documents', path: 'documents' },
+   { label: 'Plans', path: 'plans' },
+   { label: 'Live Race', path: 'live' },
++  { label: 'Cars', path: 'cars' },
+   { label: 'Files', path: 'files' },
+   { label: 'Reports', path: 'reports' },
+   { label: 'Settings', path: 'settings' },
+diff --git a/frontend/src/features/workspace/WorkspaceScreenRouter.jsx b/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
+index f472f4c..66b95e4 100644
+--- a/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
++++ b/frontend/src/features/workspace/WorkspaceScreenRouter.jsx
+@@ -4,6 +4,7 @@ import MembersScreen from './screens/MembersScreen'
+ import DocumentsScreen from './screens/DocumentsScreen'
+ import PlansScreen from './screens/PlansScreen'
+ import LiveRaceScreen from './screens/LiveRaceScreen'
++import CarsScreen from './screens/CarsScreen'
+ import FilesScreen from './screens/FilesScreen'
+ import ReportsScreen from './screens/ReportsScreen'
+ import SettingsScreen from './screens/SettingsScreen'
+@@ -14,6 +15,7 @@ const screens = {
+   documents: DocumentsScreen,
+   plans: PlansScreen,
+   live: LiveRaceScreen,
++  cars: CarsScreen,
+   files: FilesScreen,
+   reports: ReportsScreen,
+   settings: SettingsScreen,
+diff --git a/frontend/src/features/workspace/components/GarageAlerts.jsx b/frontend/src/features/workspace/components/GarageAlerts.jsx
+new file mode 100644
+index 0000000..5f93f7d
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageAlerts.jsx
+@@ -0,0 +1,27 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function GarageAlerts({ alerts }) {
++  return (
++    <Card className="garage-alerts">
++      <span className="eyebrow">Maintenance alerts</span>
++      <h2>Attention needed</h2>
++      <div className="garage-alert-list">
++        {alerts.length === 0 ? (
++          <p>No active maintenance alerts. Keep monitoring fuel, tyre life and setup readiness.</p>
++        ) : (
++          alerts.map((alert) => (
++            <article className="garage-alert" key={alert.id}>
++              <div>
++                <strong>{alert.title}</strong>
++                <span>{alert.car}</span>
++                <p>{alert.description}</p>
++              </div>
++              <Badge tone={alert.tone}>Alert</Badge>
++            </article>
++          ))
++        )}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/GarageCarCard.jsx b/frontend/src/features/workspace/components/GarageCarCard.jsx
+new file mode 100644
+index 0000000..9e77cc7
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageCarCard.jsx
+@@ -0,0 +1,33 @@
++import Badge from '../../../shared/ui/Badge'
++import Button from '../../../shared/ui/Button'
++import Card from '../../../shared/ui/Card'
++import Progress from '../../../shared/ui/Progress'
++
++export default function GarageCarCard({ car }) {
++  return (
++    <Card className="garage-car-card">
++      <div className="garage-car-card__header">
++        <div>
++          <span className="eyebrow">{car.category}</span>
++          <h3>{car.number} {car.name}</h3>
++        </div>
++        <Badge tone={car.statusTone}>{car.status}</Badge>
++      </div>
++
++      <p>{car.model}</p>
++
++      <div className="garage-car-card__metrics">
++        <Progress label={`Fuel • ${car.fuelTone}`} value={car.fuel} />
++        <Progress label={`Tyre life • ${car.tyreTone}`} value={car.tyreLife} />
++      </div>
++
++      <div className="garage-car-card__meta">
++        <span>Last driver: {car.lastDriver}</span>
++        <span>Setup: {car.setup}</span>
++        <span>Next maintenance: {car.nextMaintenance}</span>
++      </div>
++
++      <Button variant="secondary">Open car brief</Button>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/GarageHero.jsx b/frontend/src/features/workspace/components/GarageHero.jsx
+new file mode 100644
+index 0000000..3ee901a
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageHero.jsx
+@@ -0,0 +1,14 @@
++import Badge from '../../../shared/ui/Badge'
++
++export default function GarageHero({ hero }) {
++  return (
++    <section className="workspace-hero garage-hero">
++      <div>
++        <span className="eyebrow">Workspace cars</span>
++        <h2>{hero.title}</h2>
++        <p>{hero.description}</p>
++      </div>
++      <Badge tone="success">{hero.status}</Badge>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/GarageMaintenanceList.jsx b/frontend/src/features/workspace/components/GarageMaintenanceList.jsx
+new file mode 100644
+index 0000000..af5454c
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageMaintenanceList.jsx
+@@ -0,0 +1,22 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function GarageMaintenanceList({ maintenances }) {
++  return (
++    <Card className="garage-maintenance-list">
++      <span className="eyebrow">Next maintenance</span>
++      <h2>Service queue</h2>
++      <div className="garage-maintenance-items">
++        {maintenances.map((maintenance) => (
++          <article className="garage-maintenance-item" key={maintenance.id}>
++            <div>
++              <strong>{maintenance.car}</strong>
++              <p>{maintenance.task}</p>
++            </div>
++            <Badge tone={maintenance.tone}>{maintenance.status}</Badge>
++          </article>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/GarageStatusPanel.jsx b/frontend/src/features/workspace/components/GarageStatusPanel.jsx
+new file mode 100644
+index 0000000..0b3b45e
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageStatusPanel.jsx
+@@ -0,0 +1,19 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function GarageStatusPanel({ statuses }) {
++  return (
++    <Card className="garage-status-panel">
++      <span className="eyebrow">Garage status</span>
++      <h2>Fleet readiness</h2>
++      <div className="garage-status-list">
++        {statuses.map((status) => (
++          <div className="garage-status-row" key={status.label}>
++            <span>{status.label}</span>
++            <Badge tone={status.tone}>{status.value} cars</Badge>
++          </div>
++        ))}
++      </div>
++    </Card>
++  )
++}
+diff --git a/frontend/src/features/workspace/components/GarageSummaryCards.jsx b/frontend/src/features/workspace/components/GarageSummaryCards.jsx
+new file mode 100644
+index 0000000..83bb7bc
+--- /dev/null
++++ b/frontend/src/features/workspace/components/GarageSummaryCards.jsx
+@@ -0,0 +1,23 @@
++import Badge from '../../../shared/ui/Badge'
++import Card from '../../../shared/ui/Card'
++
++export default function GarageSummaryCards({ stats }) {
++  const cards = [
++    { label: 'Total cars', value: stats.total, tone: 'accent' },
++    { label: 'Ready', value: stats.ready, tone: 'success' },
++    { label: 'On track', value: stats.onTrack, tone: 'accent' },
++    { label: 'Maintenance', value: stats.maintenance, tone: 'warning' },
++  ]
++
++  return (
++    <section className="garage-summary-grid" aria-label="Garage summary">
++      {cards.map((card) => (
++        <Card className="garage-summary-card" key={card.label}>
++          <span className="eyebrow">{card.label}</span>
++          <strong>{card.value}</strong>
++          <Badge tone={card.tone}>{card.label}</Badge>
++        </Card>
++      ))}
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/screens/CarsScreen.jsx b/frontend/src/features/workspace/screens/CarsScreen.jsx
+new file mode 100644
+index 0000000..e08f5bc
+--- /dev/null
++++ b/frontend/src/features/workspace/screens/CarsScreen.jsx
+@@ -0,0 +1,32 @@
++import GarageAlerts from '../components/GarageAlerts'
++import GarageCarCard from '../components/GarageCarCard'
++import GarageHero from '../components/GarageHero'
++import GarageMaintenanceList from '../components/GarageMaintenanceList'
++import GarageStatusPanel from '../components/GarageStatusPanel'
++import GarageSummaryCards from '../components/GarageSummaryCards'
++import { getGarage } from '../services/garageService'
++
++export default function CarsScreen() {
++  const garage = getGarage()
++
++  return (
++    <section className="screen-stack garage-screen">
++      <GarageHero hero={garage.hero} />
++      <GarageSummaryCards stats={garage.stats} />
++
++      <section className="garage-layout">
++        <section className="garage-car-grid" aria-label="Garage cars">
++          {garage.cars.map((car) => (
++            <GarageCarCard car={car} key={car.id} />
++          ))}
++        </section>
++
++        <aside className="garage-side-panel">
++          <GarageStatusPanel statuses={garage.statusPanel} />
++          <GarageMaintenanceList maintenances={garage.nextMaintenances} />
++          <GarageAlerts alerts={garage.alerts} />
++        </aside>
++      </section>
++    </section>
++  )
++}
+diff --git a/frontend/src/features/workspace/services/garageService.js b/frontend/src/features/workspace/services/garageService.js
+new file mode 100644
+index 0000000..163c639
+--- /dev/null
++++ b/frontend/src/features/workspace/services/garageService.js
+@@ -0,0 +1,141 @@
++const garageCars = [
++  {
++    id: 'car-27',
++    name: 'Falcon GT3',
++    model: 'BMW M4 GT3 Evo',
++    number: '#27',
++    category: 'GT3 Pro',
++    status: 'Ready',
++    fuel: 86,
++    tyreLife: 78,
++    lastDriver: 'Marina Costa',
++    setup: 'Barcelona Race v4',
++    nextMaintenance: 'Brake inspection after FP2',
++  },
++  {
++    id: 'car-88',
++    name: 'Night Hawk',
++    model: 'Porsche 911 GT3 R',
++    number: '#88',
++    category: 'GT3 Am',
++    status: 'Garage',
++    fuel: 64,
++    tyreLife: 51,
++    lastDriver: 'Rafael Lima',
++    setup: 'Safe wet baseline',
++    nextMaintenance: 'Refuel and tyre pressure reset',
++  },
++  {
++    id: 'car-12',
++    name: 'Apex Prototype',
++    model: 'Ligier JS P320',
++    number: '#12',
++    category: 'LMP3',
++    status: 'On Track',
++    fuel: 38,
++    tyreLife: 42,
++    lastDriver: 'Nico Alvarez',
++    setup: 'High downforce race trim',
++    nextMaintenance: 'Fuel stop in 18 minutes',
++  },
++  {
++    id: 'car-44',
++    name: 'Reserve GT4',
++    model: 'Mercedes-AMG GT4',
++    number: '#44',
++    category: 'GT4',
++    status: 'Maintenance',
++    fuel: 22,
++    tyreLife: 18,
++    lastDriver: 'João Mendes',
++    setup: 'Qualifying baseline',
++    nextMaintenance: 'Replace front-left tyre sensor',
++  },
++]
++
++const statusTone = {
++  Ready: 'success',
++  Garage: 'neutral',
++  'On Track': 'accent',
++  Maintenance: 'warning',
++}
++
++const statusPriority = {
++  Maintenance: 0,
++  'On Track': 1,
++  Garage: 2,
++  Ready: 3,
++}
++
++function getFuelTone(fuel) {
++  if (fuel < 30) return 'danger'
++  if (fuel < 55) return 'warning'
++  return 'success'
++}
++
++function getTyreTone(tyreLife) {
++  if (tyreLife < 25) return 'danger'
++  if (tyreLife < 55) return 'warning'
++  return 'success'
++}
++
++function getMaintenanceAlerts(cars) {
++  return cars
++    .filter((car) => car.status === 'Maintenance' || car.fuel < 30 || car.tyreLife < 25)
++    .map((car) => ({
++      id: `${car.id}-alert`,
++      car: `${car.number} ${car.name}`,
++      title: car.status === 'Maintenance' ? 'Maintenance required' : 'Consumable threshold reached',
++      description:
++        car.status === 'Maintenance'
++          ? car.nextMaintenance
++          : `Fuel at ${car.fuel}% and tyre life at ${car.tyreLife}%. Prepare service plan.`,
++      tone: car.status === 'Maintenance' || car.tyreLife < 25 ? 'warning' : 'danger',
++    }))
++}
++
++function getGarageStats(cars) {
++  return {
++    total: cars.length,
++    ready: cars.filter((car) => car.status === 'Ready').length,
++    onTrack: cars.filter((car) => car.status === 'On Track').length,
++    maintenance: cars.filter((car) => car.status === 'Maintenance').length,
++  }
++}
++
++export function getGarage() {
++  const cars = garageCars
++    .map((car) => ({
++      ...car,
++      statusTone: statusTone[car.status] ?? 'neutral',
++      fuelTone: getFuelTone(car.fuel),
++      tyreTone: getTyreTone(car.tyreLife),
++    }))
++    .sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
++
++  const stats = getGarageStats(cars)
++
++  return {
++    hero: {
++      title: 'Garage Module',
++      description: 'Monitor the team cars, readiness, consumables and maintenance queue from one workspace module.',
++      status: `${stats.ready}/${stats.total} cars ready`,
++    },
++    stats,
++    cars,
++    statusPanel: [
++      { label: 'Ready', value: stats.ready, tone: 'success' },
++      { label: 'Garage', value: cars.filter((car) => car.status === 'Garage').length, tone: 'neutral' },
++      { label: 'On Track', value: stats.onTrack, tone: 'accent' },
++      { label: 'Maintenance', value: stats.maintenance, tone: 'warning' },
++    ],
++    nextMaintenances: cars.map((car) => ({
++      id: `${car.id}-maintenance`,
++      car: `${car.number} ${car.name}`,
++      task: car.nextMaintenance,
++      status: car.status,
++      tone: car.statusTone,
++    })),
++    alerts: getMaintenanceAlerts(cars),
++  }
++}
+-- 
+2.43.0
+
