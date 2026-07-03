@@ -1018,3 +1018,165 @@ a {
     justify-items: start;
   }
 }
+
+.garage-screen {
+  max-width: 1440px;
+}
+
+.garage-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.garage-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -90px -130px auto;
+  width: 280px;
+  height: 280px;
+  background: rgba(124, 92, 255, 0.16);
+  border-radius: 999px;
+  filter: blur(10px);
+}
+
+.garage-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.garage-hero__status {
+  align-items: flex-end;
+  color: var(--muted);
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+  min-width: min(280px, 100%);
+}
+
+.garage-summary-grid,
+.garage-layout,
+.garage-car-grid,
+.garage-side-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.garage-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.garage-layout {
+  grid-template-columns: 1.4fr 0.8fr;
+}
+
+.garage-car-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.garage-summary-card,
+.garage-car-card,
+.garage-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.garage-summary-card strong {
+  font-size: 34px;
+}
+
+.garage-summary-card p,
+.garage-car-card p,
+.garage-maintenance-item p,
+.garage-alert p {
+  margin: 0;
+}
+
+.garage-car-card__header,
+.garage-car-card__meta,
+.garage-car-card__maintenance,
+.garage-status-item,
+.garage-maintenance-item,
+.garage-alert {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.garage-car-card h3,
+.garage-panel h2 {
+  margin: 0;
+}
+
+.garage-car-card__meta,
+.garage-car-card__setup,
+.garage-car-card__maintenance,
+.garage-status-item,
+.garage-maintenance-item,
+.garage-alert {
+  background: #11151f;
+  border: 1px solid #252a3a;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.garage-car-card__meta,
+.garage-car-card__setup p,
+.garage-car-card__maintenance span,
+.garage-status-item span,
+.garage-maintenance-item p,
+.garage-alert p {
+  color: var(--muted);
+}
+
+.garage-status-list,
+.garage-maintenance-list__items,
+.garage-alert-list {
+  display: grid;
+  gap: 12px;
+}
+
+.garage-status-item div,
+.garage-maintenance-item div,
+.garage-alert div {
+  display: grid;
+  gap: 4px;
+}
+
+.garage-alert--warning {
+  border-color: rgba(255, 198, 88, 0.38);
+}
+
+.garage-alert--critical {
+  border-color: rgba(255, 92, 122, 0.42);
+}
+
+@media (max-width: 1180px) {
+  .garage-summary-grid,
+  .garage-layout,
+  .garage-car-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .garage-summary-grid,
+  .garage-layout,
+  .garage-car-grid,
+  .garage-car-card__header,
+  .garage-car-card__meta,
+  .garage-car-card__maintenance,
+  .garage-status-item,
+  .garage-maintenance-item,
+  .garage-alert {
+    align-items: stretch;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .garage-hero__status {
+    align-items: stretch;
+    justify-items: start;
+  }
+}

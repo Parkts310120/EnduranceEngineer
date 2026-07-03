@@ -28,6 +28,7 @@ export const WORKSPACE_NAVIGATION = [
   { label: 'Documents', path: 'documents' },
   { label: 'Plans', path: 'plans' },
   { label: 'Live Race', path: 'live' },
+  { label: 'Cars', path: 'cars' },
   { label: 'Files', path: 'files' },
   { label: 'Reports', path: 'reports' },
   { label: 'Settings', path: 'settings' },
