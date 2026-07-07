@@ -27,6 +27,7 @@ export default function AppRouter() {
           <Route path="plans" element={<WorkspaceScreenRouter screen="plans" />} />
           <Route path="live" element={<WorkspaceScreenRouter screen="live" />} />
           <Route path="stints" element={<WorkspaceScreenRouter screen="stints" />} />
+          <Route path="intelligence" element={<WorkspaceScreenRouter screen="intelligence" />} />
           <Route path="cars" element={<WorkspaceScreenRouter screen="cars" />} />
           <Route path="files" element={<WorkspaceScreenRouter screen="files" />} />
           <Route path="reports" element={<WorkspaceScreenRouter screen="reports" />} />
