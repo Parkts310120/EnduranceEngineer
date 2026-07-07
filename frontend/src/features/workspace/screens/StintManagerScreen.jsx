@@ -35,22 +35,36 @@ function Summary({ summary }) {
 
 function Timeline({ timeline }) {
   return (
-    <Card>
-      <span className="eyebrow">Timeline</span>
-      <h2>Driver Rotation</h2>
+    <Card className="stint-timeline-card">
+      <div className="stint-timeline-card__header">
+        <div>
+          <span className="eyebrow">Timeline</span>
+          <h2>Driver Rotation</h2>
+        </div>
+        <Badge tone="accent">{timeline.length} stints</Badge>
+      </div>
 
-      <div className="garage-status-list">
+      <div className="stint-timeline">
         {timeline.map((item) => (
-          <div className="garage-status-item" key={item.id}>
-            <div>
+          <article className={`stint-timeline-item stint-timeline-item--${item.status}`} key={item.id}>
+            <div className="stint-timeline-item__marker">
+              <span />
+            </div>
+
+            <div className="stint-timeline-item__time">
+              <strong>{item.start}</strong>
+              <span>{item.end}</span>
+            </div>
+
+            <div className="stint-timeline-item__content">
               <strong>{item.driver}</strong>
               <span>
-                {item.start} → {item.end}
+                {item.status === 'current' ? 'Driving now' : `${item.start} → ${item.end}`}
               </span>
             </div>
 
             <Badge tone={item.tone}>{item.status}</Badge>
-          </div>
+          </article>
         ))}
       </div>
     </Card>
