@@ -1,5 +1,5 @@
 import { MEMBER_ROLES } from '../../../domain/constants'
-import { members, squads } from '../../../domain/mockData'
+import { getMembersByWorkspace, getSquadByWorkspace } from '../../members/services/membersRepository'
 
 const roleTone = {
   driver: 'accent',
@@ -19,11 +19,7 @@ const statusTone = {
 }
 
 function getWorkspaceMembers(workspace) {
-  const squad = squads.find((item) => item.id === workspace.squadId)
-  const squadMemberIds = squad?.memberIds ?? []
-
-  return members
-    .filter((member) => squadMemberIds.includes(member.id))
+  return getMembersByWorkspace(workspace)
     .map((member) => ({
       ...member,
       primaryRole: member.roles[0],
@@ -95,7 +91,7 @@ function getMembersAlerts(workspaceMembers) {
 }
 
 export function getMembersOverview(workspace) {
-  const squad = squads.find((item) => item.id === workspace.squadId)
+  const squad = getSquadByWorkspace(workspace)
   const workspaceMembers = getWorkspaceMembers(workspace)
   const readyStatuses = ['Available', 'Ready', 'Lead driver']
   const readyCount = workspaceMembers.filter((member) => readyStatuses.includes(member.status)).length
