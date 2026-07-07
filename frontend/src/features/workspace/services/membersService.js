@@ -1,16 +1,21 @@
+import { MEMBER_ROLES } from '../../../domain/constants'
 import { members, squads } from '../../../domain/mockData'
 
 const roleTone = {
   driver: 'accent',
-  engineer: 'success',
+  race_engineer: 'success',
   strategist: 'warning',
-  manager: 'neutral',
+  spotter: 'neutral',
+  team_manager: 'accent',
+  analyst: 'success',
 }
 
-const availabilityTone = {
+const statusTone = {
   Available: 'success',
-  Busy: 'warning',
-  Offline: 'neutral',
+  Ready: 'success',
+  'Lead driver': 'accent',
+  'Night block': 'warning',
+  'Support crew': 'neutral',
 }
 
 function getWorkspaceMembers(workspace) {
@@ -22,8 +27,9 @@ function getWorkspaceMembers(workspace) {
     .map((member) => ({
       ...member,
       primaryRole: member.roles[0],
+      primaryRoleLabel: MEMBER_ROLES[member.roles[0]],
       roleTone: roleTone[member.roles[0]] ?? 'neutral',
-      availabilityTone: availabilityTone[member.status] ?? 'neutral',
+      statusTone: statusTone[member.status] ?? 'neutral',
     }))
 }
 
@@ -39,62 +45,73 @@ function getRoleSummary(workspaceMembers) {
     }, {}),
   ).map(([role, count]) => ({
     role,
+    label: MEMBER_ROLES[role] ?? role,
     count,
     tone: roleTone[role] ?? 'neutral',
   }))
 }
 
-function getAvailabilitySummary(workspaceMembers) {
-  return ['Available', 'Busy', 'Offline'].map((status) => ({
+function getStatusSummary(workspaceMembers) {
+  return Object.entries(
+    workspaceMembers.reduce((summary, member) => {
+      return {
+        ...summary,
+        [member.status]: (summary[member.status] ?? 0) + 1,
+      }
+    }, {}),
+  ).map(([status, count]) => ({
     status,
-    count: workspaceMembers.filter((member) => member.status === status).length,
-    tone: availabilityTone[status] ?? 'neutral',
+    count,
+    tone: statusTone[status] ?? 'neutral',
   }))
 }
 
 function getMembersAlerts(workspaceMembers) {
-  const unavailableDrivers = workspaceMembers.filter(
-    (member) => member.roles.includes('driver') && member.status !== 'Available',
+  const availableDrivers = workspaceMembers.filter(
+    (member) => member.roles.includes('driver') && ['Available', 'Ready', 'Lead driver'].includes(member.status),
   )
 
-  if (unavailableDrivers.length === 0) {
+  if (availableDrivers.length >= 3) {
     return [
       {
         id: 'members-alert-ready',
         severity: 'info',
         tone: 'accent',
-        title: 'Crew coverage looks healthy',
-        message: 'All assigned drivers are available for the next planning cycle.',
+        title: 'Driver coverage looks healthy',
+        message: 'At least three assigned drivers are ready for the next planning cycle.',
       },
     ]
   }
 
-  return unavailableDrivers.map((member) => ({
-    id: `members-alert-${member.id}`,
-    severity: 'warning',
-    tone: 'warning',
-    title: `${member.name} is not available`,
-    message: 'Review stint assignments before locking the race plan.',
-  }))
+  return [
+    {
+      id: 'members-alert-driver-coverage',
+      severity: 'warning',
+      tone: 'warning',
+      title: 'Driver coverage needs review',
+      message: 'Confirm driver availability before locking the stint plan.',
+    },
+  ]
 }
 
 export function getMembersOverview(workspace) {
   const squad = squads.find((item) => item.id === workspace.squadId)
   const workspaceMembers = getWorkspaceMembers(workspace)
-  const availableCount = workspaceMembers.filter((member) => member.status === 'Available').length
+  const readyStatuses = ['Available', 'Ready', 'Lead driver']
+  const readyCount = workspaceMembers.filter((member) => readyStatuses.includes(member.status)).length
   const driverCount = workspaceMembers.filter((member) => member.roles.includes('driver')).length
 
   return {
     hero: {
       title: 'Members',
       description: 'Manage the people assigned to this endurance workspace. Driver is a role, not the primary entity.',
-      status: `${availableCount}/${workspaceMembers.length} available`,
+      status: `${readyCount}/${workspaceMembers.length} ready`,
       focus: squad?.name ?? 'Workspace squad',
     },
     summary: [
       { label: 'Assigned members', value: workspaceMembers.length, detail: 'Workspace crew' },
       { label: 'Drivers', value: driverCount, detail: 'Members with driver role' },
-      { label: 'Available now', value: availableCount, detail: 'Ready for planning' },
+      { label: 'Ready now', value: readyCount, detail: 'Available for planning' },
       { label: 'Role coverage', value: getRoleSummary(workspaceMembers).length, detail: 'Active roles in squad' },
     ],
     members: workspaceMembers,
@@ -103,9 +120,9 @@ export function getMembersOverview(workspace) {
       items: getRoleSummary(workspaceMembers),
     },
     availability: {
-      title: 'Availability',
-      readiness: `${availableCount} available members`,
-      items: getAvailabilitySummary(workspaceMembers),
+      title: 'Crew status',
+      readiness: `${readyCount} ready members`,
+      items: getStatusSummary(workspaceMembers),
     },
     alerts: getMembersAlerts(workspaceMembers),
   }
