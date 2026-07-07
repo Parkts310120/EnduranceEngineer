@@ -4,6 +4,7 @@ import MembersScreen from './screens/MembersScreen'
 import DocumentsScreen from './screens/DocumentsScreen'
 import PlansScreen from './screens/PlansScreen'
 import LiveRaceScreen from './screens/LiveRaceScreen'
+import StintManagerScreen from './screens/StintManagerScreen'
 import CarsScreen from './screens/CarsScreen'
 import FilesScreen from './screens/FilesScreen'
 import ReportsScreen from './screens/ReportsScreen'
@@ -15,6 +16,7 @@ const screens = {
   documents: DocumentsScreen,
   plans: PlansScreen,
   live: LiveRaceScreen,
+  stints: StintManagerScreen,
   cars: CarsScreen,
   files: FilesScreen,
   reports: ReportsScreen,
