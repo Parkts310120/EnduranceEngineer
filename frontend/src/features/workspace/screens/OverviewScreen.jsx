@@ -6,16 +6,29 @@ import PreparationChecklistCard from '../components/PreparationChecklistCard'
 import ProgressCard from '../components/ProgressCard'
 import TeamStatusCard from '../components/TeamStatusCard'
 import UpcomingScheduleCard from '../components/UpcomingScheduleCard'
+import RaceStatusPanel from '../components/RaceStatusPanel'
+import { getRaceControl } from '../services/raceControlService'
+import { getRaceIntelligence } from '../services/raceIntelligenceService'
 import { getWorkspaceMissionControl } from '../services/workspaceService'
 
 export default function OverviewScreen({ workspace }) {
   const missionControl = getWorkspaceMissionControl(workspace)
+  const raceControl = getRaceControl()
+  const intelligence = getRaceIntelligence()
   const { checklist, missionCards, modules, nextAction, phases, progress, schedule, teamStatus, workspaceStatus } =
     missionControl
 
   return (
     <div className="screen-stack mission-control">
       <MissionHero phases={phases} workspaceStatus={workspaceStatus} />
+      <RaceStatusPanel
+        raceControl={raceControl}
+        intelligence={intelligence}
+      />
+      <RaceStatusPanel
+        raceControl={raceControl}
+        intelligence={intelligence}
+      />
       <MissionSummaryGrid cards={missionCards} />
 
       <section className="mission-layout">
