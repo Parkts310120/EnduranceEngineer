@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { team } from '../../domain/mockData'
 import Badge from '../../shared/ui/Badge'
 import Button from '../../shared/ui/Button'
@@ -18,7 +19,7 @@ export default function TeamPage() {
         <Input label="Category" defaultValue={team.category} />
         <Input label="Status" defaultValue={team.status} />
 
-        <Button className="full-width">Save team foundation</Button>
+        <Button as={Link} to="/workspace" className="full-width">Save team foundation</Button>
       </Card>
     </main>
   )

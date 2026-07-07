@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { organization } from '../../domain/mockData'
 import Button from '../../shared/ui/Button'
 import Input from '../../shared/ui/Input'
@@ -18,7 +19,7 @@ export default function OrganizationPage() {
         <Input label="Country" defaultValue={organization.country} />
         <Input label="Timezone" defaultValue={organization.timezone} />
 
-        <Button className="full-width">Continue to team</Button>
+        <Button as={Link} to="/team" className="full-width">Continue to team</Button>
       </section>
     </main>
   )
