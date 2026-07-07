@@ -1,4 +1,4 @@
-import { members, squads } from '../../../domain/mockData'
+import { members, squads } from './membersMock'
 
 export function getSquadByWorkspace(workspace) {
   return squads.find((squad) => squad.id === workspace.squadId) ?? null
