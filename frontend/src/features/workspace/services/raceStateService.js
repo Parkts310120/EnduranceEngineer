@@ -31,6 +31,13 @@ export function getRaceState() {
         driverSwap: true,
         repair: false,
       },
+      checklist: [
+        { id: 'driver-ready', label: 'Next driver ready', status: 'pending' },
+        { id: 'fuel-call', label: 'Confirm fuel amount', status: 'pending' },
+        { id: 'radio-check', label: 'Radio check', status: 'pending' },
+        { id: 'pit-entry', label: 'Pit entry reminder', status: 'pending' },
+        { id: 'driver-swap', label: 'Driver swap procedure', status: 'pending' },
+      ],
     },
   }
 }

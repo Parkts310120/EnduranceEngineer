@@ -41,6 +41,24 @@ export default function RaceStatusPanel({ raceControl, intelligence }) {
           <p>Driver swap planned</p>
         </Card>
       </div>
+
+      <div className="pit-checklist-panel">
+        <div className="pit-checklist-panel__header">
+          <span className="eyebrow">Pit Checklist</span>
+          <Badge tone="warning">Pit in {raceControl.currentStint.expectedPit}</Badge>
+        </div>
+
+        <div className="pit-checklist-list">
+          {raceControl.pitChecklist.map((item) => (
+            <div className="pit-checklist-item" key={item.id}>
+              <span>{item.label}</span>
+              <Badge tone={item.status === 'done' ? 'success' : 'neutral'}>
+                {item.status}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </div>
     </Card>
   )
 }

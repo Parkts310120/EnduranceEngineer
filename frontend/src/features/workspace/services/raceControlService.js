@@ -33,6 +33,7 @@ export function getRaceControl() {
     },
 
     pitStop: state.pitWindow.service,
+    pitChecklist: state.pitWindow.checklist,
 
     alerts: [
       {
