@@ -30,7 +30,19 @@ export default function RaceIntelligenceScreen() {
 
             <p>{item.message}</p>
 
-            <strong>{item.impact}</strong>
+            <div className="race-intelligence-reasoning">
+              <span className="eyebrow">Reasoning</span>
+              <ul>
+                {(item.reasoning ?? []).map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="race-intelligence-impact">
+              <strong>{item.impact}</strong>
+              <Badge tone="success">{item.confidence ?? intelligence.hero.confidence}% confidence</Badge>
+            </div>
           </Card>
         ))}
       </section>

@@ -1,47 +1,41 @@
-import { getRaceControl } from './raceControlService'
+import { evaluateRaceState } from './raceRulesEngine'
+import { getRaceState } from './raceStateService'
 
 export function getRaceIntelligence() {
-  const control = getRaceControl()
+  const state = getRaceState()
+  const analysis = evaluateRaceState(state)
 
   return {
     hero: {
       title: 'Race Intelligence',
       description: 'Operational recommendations generated from the current race state.',
-      confidence: 92,
+      confidence: analysis.confidence,
       status: 'Active analysis',
     },
 
-    recommendations: [
-      {
-        id: 'prepare-next-driver',
-        priority: 'high',
-        title: `Prepare ${control.currentStint.nextDriver}`,
-        message: `Driver swap expected in ${18} minutes.`,
-        impact: 'Avoid late pit preparation',
-      },
-      {
-        id: 'fuel-save',
-        priority: 'medium',
-        title: 'Fuel target is stable',
-        message: `${control.currentStint.fuel}% fuel remaining. Current pit window remains valid.`,
-        impact: 'Keep planned stop window',
-      },
-      {
-        id: 'tyre-extend',
-        priority: 'medium',
-        title: 'Tyres can stay out',
-        message: `${control.currentStint.tyres}% tyre life on ${control.currentStint.tyreSet}. No tyre change recommended yet.`,
-        impact: 'Reduce pit lane time',
-      },
-    ],
+    recommendations:
+      analysis.recommendations.length > 0
+        ? analysis.recommendations
+        : [
+            {
+              id: 'stable-strategy',
+              priority: 'low',
+              title: 'Strategy looks stable',
+              message: 'No immediate intervention required from the current race state.',
+              impact: 'Keep monitoring.',
+            },
+          ],
 
-    risks: [
-      {
-        id: 'pit-prep',
-        severity: 'warning',
-        title: 'Pit preparation window approaching',
-        message: 'Confirm fuel, driver swap and comms checklist before the next stop.',
-      },
-    ],
+    risks:
+      analysis.risks.length > 0
+        ? analysis.risks
+        : [
+            {
+              id: 'no-critical-risk',
+              severity: 'info',
+              title: 'No critical risks detected',
+              message: 'Fuel, tyres and stint timing are inside the expected operating window.',
+            },
+          ],
   }
 }

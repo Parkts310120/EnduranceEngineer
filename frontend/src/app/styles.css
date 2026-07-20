@@ -1402,3 +1402,52 @@ a {
     display: none;
   }
 }
+
+.race-intelligence-reasoning {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.race-intelligence-reasoning ul {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.race-intelligence-impact {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pit-checklist-panel {
+  margin-top: 22px;
+}
+
+.pit-checklist-panel__header,
+.pit-checklist-item {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.pit-checklist-panel__header {
+  margin-bottom: 12px;
+}
+
+.pit-checklist-list {
+  display: grid;
+  gap: 10px;
+}
+
+.pit-checklist-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(152, 162, 181, 0.12);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
